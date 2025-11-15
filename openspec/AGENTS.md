@@ -79,6 +79,12 @@ After deployment, create separate PR to:
 - Use `openspec show [spec]` to review current state
 - If request is ambiguous, ask 1–2 clarifying questions before scaffolding
 
+**When Creating tasks.md:**
+- **MANDATORY**: Always include a "Test Execution and Validation" section
+- This section must include tasks to run unit tests, feature tests, and all tests
+- Include tasks to fix any failing tests after code changes
+- Test execution is a gate - all tests must pass before work is considered complete
+
 **Running PHP Commands:**
 - **ALWAYS** run PHP-related commands inside the PHP container, never directly in the console
 - Use `docker-compose exec php <command>` or `docker exec symfony-php <command>`
@@ -214,7 +220,16 @@ If multiple capabilities are affected, create multiple delta files under `change
 - [ ] 1.4 Write tests
 - [ ] 1.5 Review and optimize database queries (reduce query count if possible, without breaking business rules or performance)
 - [ ] 1.6 Replace string literals with Enums/constants (messages, status values) - convert to strings only in presentation layer
+
+## X. Test Execution and Validation
+- [ ] X.1 Run all unit tests: `make test-unit` and verify they pass
+- [ ] X.2 Run all feature tests: `make test-feature` and verify they pass
+- [ ] X.3 Run all tests: `make test` and verify all tests pass with exit code 0
+- [ ] X.4 Fix any failing tests that may have been broken by code changes
+- [ ] X.5 Verify test coverage is maintained after code changes
 ```
+
+**CRITICAL**: Every `tasks.md` MUST include a "Test Execution and Validation" section with explicit tasks to run tests after code changes. This is mandatory regardless of whether new tests are written or only existing code is modified.
 
 5. **Create design.md when needed:**
 Create `design.md` if any of the following apply; otherwise omit it:
@@ -458,10 +473,12 @@ notifications/spec.md
 - **MANDATORY: Feature tests for success cases** - Test happy path with valid data
 - **MANDATORY: Run all tests after code changes** - Use `make test` command
 - **MANDATORY: Fix failing tests before completion** - Never leave tests in a failing state
+- **MANDATORY: Include test execution tasks in tasks.md** - Every proposal MUST have a "Test Execution and Validation" section with explicit tasks to run tests
 - Test missing required fields, invalid types, invalid values, invalid JSON format
 - Verify specific error messages in validation tests
 - Request DTOs must have 100% test coverage
 - **Test execution is a gate** - All tests must pass before work is considered complete
+- **Test execution tasks are required** - Even if no new tests are written, existing tests must be run and verified after any code changes
 
 ### Complexity Triggers
 Only add complexity with:
