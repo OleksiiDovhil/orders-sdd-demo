@@ -285,6 +285,27 @@ feat(user): add user creation endpoint
 - **MUST be thin** - Only orchestrate HTTP concerns
 - **MUST delegate to handlers** - No business logic in controllers
 
+### Database Query Optimization
+- **MUST review database queries for optimization opportunities** - Check if query count can be reduced
+- **Combine queries when possible** - Use JOINs or single queries instead of multiple separate queries
+- **Load entity properties from database** - Include all needed fields in initial query rather than separate lookups
+- **Avoid N+1 query problems** - Use eager loading or batch queries when fetching related data
+- **Optimize only when safe** - Never optimize if it would:
+  - Break business rules or domain invariants
+  - Negatively impact performance (e.g., loading unnecessary data)
+  - Compromise data consistency or transaction integrity
+  - Make code significantly more complex without clear benefit
+- **Example**: If checking order payment status, load `is_paid` in the initial order query rather than making a separate query
+
+### String Literals and Constants
+- **MUST NOT use string literals in business logic** - Use Enums, constants, or value objects instead
+- **Use Enums for messages and status values** - Create typed enums with descriptive case names (e.g., `OrderCompletionMessage::PAID`, `OrderCompletionMessage::PENDING`)
+- **Keep string values in Enums** - Store actual string values as enum case values, not in business logic
+- **Convert to string only in presentation layer** - Call `getValue()` or similar methods only in controllers when converting to JSON/HTTP responses
+- **DTOs should use Enums, not strings** - Response DTOs should accept enum types, controllers convert to strings
+- **Benefits**: Type safety, centralized message management, easier refactoring, prevents typos
+- **Example**: Instead of `'Order has been paid successfully'` in handler, use `OrderCompletionMessage::PAID` enum case
+
 ### Testing Requirements
 - **MUST have unit tests for Request DTOs** - Test `createCommand()` methods
 - **MUST have feature tests for all validation scenarios** - Every constraint must be tested
@@ -307,12 +328,14 @@ feat(user): add user creation endpoint
 10. ✅ Security considerations addressed
 11. ✅ **No unused methods, functions, or classes**
 12. ✅ **Repository methods are all used in the codebase**
-13. ✅ **Request DTOs have `createCommand()` method**
-14. ✅ **Controllers accept Request DTOs as parameters (not `Request` object)**
-15. ✅ **No manual JSON parsing in controllers**
-16. ✅ **No manual validation in controllers**
-17. ✅ **Unit tests for Request DTOs (especially `createCommand()` methods)**
-18. ✅ **Feature tests for all validation scenarios**
-19. ✅ **Feature tests verify error response structure**
-20. ✅ **All tests pass after code changes (`make test`)**
-21. ✅ **Any test failures are fixed before completion**
+13. ✅ **Database queries optimized** - Query count minimized without breaking business rules or performance
+14. ✅ **No string literals in business logic** - Use Enums or constants, convert to strings only in presentation layer
+15. ✅ **Request DTOs have `createCommand()` method**
+16. ✅ **Controllers accept Request DTOs as parameters (not `Request` object)**
+17. ✅ **No manual JSON parsing in controllers**
+18. ✅ **No manual validation in controllers**
+19. ✅ **Unit tests for Request DTOs (especially `createCommand()` methods)**
+20. ✅ **Feature tests for all validation scenarios**
+21. ✅ **Feature tests verify error response structure**
+22. ✅ **All tests pass after code changes (`make test`)**
+23. ✅ **Any test failures are fixed before completion**

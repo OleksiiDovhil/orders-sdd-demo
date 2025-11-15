@@ -26,6 +26,11 @@ final class RequestDeserializer
      */
     public function deserializeAndValidate(Request $request, string $class): object
     {
+        // Handle path parameters (e.g., for CheckOrderCompletionRequest)
+        if ($class === CheckOrderCompletionRequest::class) {
+            return $this->deserializeCheckOrderCompletionRequest($request);
+        }
+
         $data = json_decode($request->getContent(), true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -78,6 +83,24 @@ final class RequestDeserializer
         }
 
         return $request;
+    }
+
+    private function deserializeCheckOrderCompletionRequest(Request $request): CheckOrderCompletionRequest
+    {
+        $uniqueOrderNumber = $request->attributes->get('uniqueOrderNumber');
+
+        if ($uniqueOrderNumber === null) {
+            throw new \InvalidArgumentException('uniqueOrderNumber path parameter is required');
+        }
+
+        $requestObject = new CheckOrderCompletionRequest((string) $uniqueOrderNumber);
+
+        $violations = $this->validator->validate($requestObject);
+        if (count($violations) > 0) {
+            throw new ValidationFailedException($requestObject, $violations);
+        }
+
+        return $requestObject;
     }
 }
 

@@ -52,9 +52,10 @@ Track these steps as TODOs and complete them one by one.
 2. **Read design.md** (if exists) - Review technical decisions
 3. **Read tasks.md** - Get implementation checklist
 4. **Implement tasks sequentially** - Complete in order
-5. **Confirm completion** - Ensure every item in `tasks.md` is finished before updating statuses
-6. **Update checklist** - After all work is done, set every task to `- [x]` so the list reflects reality
-7. **Approval gate** - Do not start implementation until the proposal is reviewed and approved
+5. **Review database queries** - Check if query count can be reduced without breaking business rules or performance
+6. **Confirm completion** - Ensure every item in `tasks.md` is finished before updating statuses
+7. **Update checklist** - After all work is done, set every task to `- [x]` so the list reflects reality
+8. **Approval gate** - Do not start implementation until the proposal is reviewed and approved
 
 ### Stage 3: Archiving Changes
 After deployment, create separate PR to:
@@ -211,6 +212,8 @@ If multiple capabilities are affected, create multiple delta files under `change
 - [ ] 1.2 Implement API endpoint
 - [ ] 1.3 Add frontend component
 - [ ] 1.4 Write tests
+- [ ] 1.5 Review and optimize database queries (reduce query count if possible, without breaking business rules or performance)
+- [ ] 1.6 Replace string literals with Enums/constants (messages, status values) - convert to strings only in presentation layer
 ```
 
 5. **Create design.md when needed:**
@@ -393,6 +396,23 @@ notifications/spec.md
 - Only implement what is required by the current use case
 - Apply YAGNI (You Aren't Gonna Need It) principle strictly
 
+### Database Query Optimization Checklist
+- [ ] Review all database queries in the implementation
+- [ ] Check if multiple queries can be combined into one (e.g., using JOINs)
+- [ ] Verify entity properties are loaded in initial query rather than separate lookups
+- [ ] Ensure no N+1 query problems exist
+- [ ] Confirm optimization doesn't break business rules
+- [ ] Verify optimization doesn't negatively impact performance
+- [ ] Test that all functionality still works correctly after optimization
+
+### String Literals and Constants Checklist
+- [ ] Review code for string literals in business logic (handlers, services, domain logic)
+- [ ] Replace string literals with Enums for messages, status values, or constants
+- [ ] Verify DTOs use enum types, not string types for these values
+- [ ] Ensure string conversion (`getValue()`) happens only in controllers/presentation layer
+- [ ] Confirm all string literals are either in Enums or configuration files
+- [ ] Test that enum values are correctly converted to strings in JSON responses
+
 ### Controller and Request Best Practices
 - **Always create Request DTOs** - Never parse JSON manually in controllers
 - **Request DTOs must have `createCommand()` method** - Convert request to application command
@@ -409,6 +429,27 @@ notifications/spec.md
 - After implementation, review and remove any unused methods
 - If a method seems useful but isn't used, document why it's needed or remove it
 - Prefer implementing the feature first, then adding methods only as needed
+
+### Database Query Optimization
+- **Always review database queries for optimization opportunities** - Check if query count can be reduced
+- **Load entity properties in initial query** - Include all needed fields (e.g., `is_paid`) when fetching entities rather than separate queries
+- **Combine queries when possible** - Use JOINs or single queries instead of multiple separate queries
+- **Avoid N+1 query problems** - Use eager loading or batch queries when fetching related data
+- **Optimize only when safe** - Never optimize if it would:
+  - Break business rules or domain invariants
+  - Negatively impact performance (e.g., loading unnecessary large datasets)
+  - Compromise data consistency or transaction integrity
+  - Make code significantly more complex without clear benefit
+- **Example**: When checking order payment status, load `is_paid` in the `findByUniqueOrderNumber()` query rather than making a separate `isPaid()` query
+
+### String Literals and Constants
+- **MUST NOT use string literals in business logic** - Use Enums, constants, or value objects instead
+- **Use Enums for messages and status values** - Create typed enums with descriptive case names (e.g., `OrderCompletionMessage::PAID`, `OrderCompletionMessage::PENDING`)
+- **Keep string values in Enums** - Store actual string values as enum case values, not in business logic
+- **Convert to string only in presentation layer** - Call `getValue()` or similar methods only in controllers when converting to JSON/HTTP responses
+- **DTOs should use Enums, not strings** - Response DTOs should accept enum types, controllers convert to strings
+- **Benefits**: Type safety, centralized message management, easier refactoring, prevents typos
+- **Example**: Instead of `'Order has been paid successfully'` in handler, use `OrderCompletionMessage::PAID` enum case
 
 ### Testing Requirements
 - **MANDATORY: Unit tests for Request DTOs** - Always test `createCommand()` methods

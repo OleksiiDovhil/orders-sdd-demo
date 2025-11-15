@@ -44,3 +44,7 @@ services:
     App\Domain\Order\Service\RedirectUrlGenerator:
         arguments:
             $paymentAggregatorBaseUrl: '%app.payment_aggregator_base_url%'
+
+    # Payment Status Service Interface to implementation mapping
+    App\Domain\Order\Service\PaymentStatusServiceInterface:
+        alias: App\Infrastructure\Payment\MockPaymentStatusService

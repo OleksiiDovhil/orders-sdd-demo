@@ -43,6 +43,7 @@ final class CreateOrderHandler
             $command->sum,
             ContractorType::fromInt($command->contractorType),
             new \DateTimeImmutable(),
+            false, // isPaid - new orders are not paid by default
             ...$orderItems
         );
 

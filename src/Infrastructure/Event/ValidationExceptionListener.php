@@ -7,6 +7,7 @@ namespace App\Infrastructure\Event;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
 
@@ -47,6 +48,16 @@ final class ValidationExceptionListener
                     JsonResponse::HTTP_BAD_REQUEST
                 );
             }
+
+            $event->setResponse($response);
+            return;
+        }
+
+        if ($exception instanceof NotFoundHttpException) {
+            $response = new JsonResponse(
+                ['error' => $exception->getMessage()],
+                JsonResponse::HTTP_NOT_FOUND
+            );
 
             $event->setResponse($response);
         }

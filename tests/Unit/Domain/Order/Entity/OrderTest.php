@@ -32,6 +32,7 @@ final class OrderTest extends TestCase
             2000, // sum (independent money field)
             $contractorType,
             $createdAt,
+            false, // isPaid
             $item
         );
 
@@ -64,7 +65,8 @@ final class OrderTest extends TestCase
             $uniqueOrderNumber,
             -100,
             $contractorType,
-            $createdAt
+            $createdAt,
+            false // isPaid
         );
     }
 }

@@ -7,6 +7,10 @@ namespace App\Infrastructure\Persistence;
 use App\Domain\Order\Entity\Order;
 use App\Domain\Order\Entity\OrderItem;
 use App\Domain\Order\Repository\OrderRepositoryInterface;
+use App\Domain\Order\ValueObject\ContractorType;
+use App\Domain\Order\ValueObject\OrderId;
+use App\Domain\Order\ValueObject\OrderNumber;
+use App\Domain\Order\ValueObject\UniqueOrderNumber;
 
 final class OrderRepository implements OrderRepositoryInterface
 {
@@ -20,37 +24,53 @@ final class OrderRepository implements OrderRepositoryInterface
         $this->pdo->beginTransaction();
 
         try {
-            // Insert order and get the generated ID
-            $stmt = $this->pdo->prepare('
-                INSERT INTO orders (order_number, unique_order_number, sum, contractor_type, created_at)
-                VALUES (:order_number, :unique_order_number, :sum, :contractor_type, :created_at)
-                RETURNING id
-            ');
+            // Check if order already exists (has non-zero ID)
+            if ($order->getId()->getValue() > 0) {
+                // Update existing order
+                $stmt = $this->pdo->prepare('
+                    UPDATE orders
+                    SET is_paid = :is_paid
+                    WHERE id = :id
+                ');
 
-            $stmt->execute([
-                ':order_number' => $order->getOrderNumber()->getValue(),
-                ':unique_order_number' => $order->getUniqueOrderNumber()->getValue(),
-                ':sum' => $order->getSum(),
-                ':contractor_type' => $order->getContractorType()->value,
-                ':created_at' => $order->getCreatedAt()->format('Y-m-d H:i:s'),
-            ]);
-
-            $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-            $orderId = (int) $result['id'];
-
-            // Insert order items
-            $itemStmt = $this->pdo->prepare('
-                INSERT INTO order_items (order_id, product_id, price, quantity)
-                VALUES (:order_id, :product_id, :price, :quantity)
-            ');
-
-            foreach ($order->getItems() as $item) {
-                $itemStmt->execute([
-                    ':order_id' => $orderId,
-                    ':product_id' => $item->getProductId(),
-                    ':price' => $item->getPrice(),
-                    ':quantity' => $item->getQuantity(),
+                $stmt->execute([
+                    ':is_paid' => $order->isPaid() ? 1 : 0,
+                    ':id' => $order->getId()->getValue(),
                 ]);
+            } else {
+                // Insert new order and get the generated ID
+                $stmt = $this->pdo->prepare('
+                    INSERT INTO orders (order_number, unique_order_number, sum, contractor_type, created_at, is_paid)
+                    VALUES (:order_number, :unique_order_number, :sum, :contractor_type, :created_at, :is_paid)
+                    RETURNING id
+                ');
+
+                $stmt->execute([
+                    ':order_number' => $order->getOrderNumber()->getValue(),
+                    ':unique_order_number' => $order->getUniqueOrderNumber()->getValue(),
+                    ':sum' => $order->getSum(),
+                    ':contractor_type' => $order->getContractorType()->value,
+                    ':created_at' => $order->getCreatedAt()->format('Y-m-d H:i:s'),
+                    ':is_paid' => $order->isPaid() ? 1 : 0,
+                ]);
+
+                $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+                $orderId = (int) $result['id'];
+
+                // Insert order items
+                $itemStmt = $this->pdo->prepare('
+                    INSERT INTO order_items (order_id, product_id, price, quantity)
+                    VALUES (:order_id, :product_id, :price, :quantity)
+                ');
+
+                foreach ($order->getItems() as $item) {
+                    $itemStmt->execute([
+                        ':order_id' => $orderId,
+                        ':product_id' => $item->getProductId(),
+                        ':price' => $item->getPrice(),
+                        ':quantity' => $item->getQuantity(),
+                    ]);
+                }
             }
 
             $this->pdo->commit();
@@ -116,6 +136,92 @@ final class OrderRepository implements OrderRepositoryInterface
             $this->pdo->rollBack();
             throw $e;
         }
+    }
+
+    public function findByUniqueOrderNumber(UniqueOrderNumber $uniqueOrderNumber): ?Order
+    {
+        // Find order by unique order number
+        $stmt = $this->pdo->prepare('
+            SELECT id, order_number, unique_order_number, sum, contractor_type, created_at, is_paid
+            FROM orders
+            WHERE unique_order_number = :unique_order_number
+        ');
+
+        $stmt->execute([
+            ':unique_order_number' => $uniqueOrderNumber->getValue(),
+        ]);
+
+        $orderData = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if ($orderData === false) {
+            return null;
+        }
+
+        // Find order items
+        $itemStmt = $this->pdo->prepare('
+            SELECT product_id, price, quantity
+            FROM order_items
+            WHERE order_id = :order_id
+            ORDER BY id
+        ');
+
+        $itemStmt->execute([
+            ':order_id' => $orderData['id'],
+        ]);
+
+        $itemsData = $itemStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Build order items
+        $orderItems = array_map(
+            fn (array $itemData) => new OrderItem(
+                (int) $itemData['product_id'],
+                (int) $itemData['price'],
+                (int) $itemData['quantity']
+            ),
+            $itemsData
+        );
+
+        // Reconstruct Order entity
+        return new Order(
+            new OrderId((int) $orderData['id']),
+            new OrderNumber((int) $orderData['order_number']),
+            new UniqueOrderNumber($orderData['unique_order_number']),
+            (int) $orderData['sum'],
+            ContractorType::fromInt((int) $orderData['contractor_type']),
+            new \DateTimeImmutable($orderData['created_at']),
+            (bool) $orderData['is_paid'],
+            ...$orderItems
+        );
+    }
+
+    public function isPaid(OrderId $orderId): bool
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT is_paid
+            FROM orders
+            WHERE id = :id
+        ');
+
+        $stmt->execute([
+            ':id' => $orderId->getValue(),
+        ]);
+
+        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $result !== false && (bool) $result['is_paid'];
+    }
+
+    public function markAsPaid(OrderId $orderId): void
+    {
+        $stmt = $this->pdo->prepare('
+            UPDATE orders
+            SET is_paid = true
+            WHERE id = :id
+        ');
+
+        $stmt->execute([
+            ':id' => $orderId->getValue(),
+        ]);
     }
 
 }

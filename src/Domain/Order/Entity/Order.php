@@ -23,6 +23,7 @@ final class Order
         private readonly int $sum,
         private readonly ContractorType $contractorType,
         private readonly \DateTimeImmutable $createdAt,
+        private bool $isPaid = false,
         OrderItem ...$items
     ) {
         if ($this->sum < 0) {
@@ -70,6 +71,16 @@ final class Order
     public function getItems(): array
     {
         return $this->items;
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->isPaid;
+    }
+
+    public function markAsPaid(): void
+    {
+        $this->isPaid = true;
     }
 }
 
