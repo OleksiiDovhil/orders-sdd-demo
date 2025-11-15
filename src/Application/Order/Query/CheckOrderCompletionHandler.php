@@ -31,7 +31,7 @@ final class CheckOrderCompletionHandler
         // First, check if order is already marked as paid
         $isPaid = $order->isPaid();
 
-        // If not paid, check with payment service
+        // If not paid, check with payment service for both contractor types
         if (!$isPaid) {
             $servicePaidStatus = $this->paymentStatusService->checkPaymentStatus($order);
 

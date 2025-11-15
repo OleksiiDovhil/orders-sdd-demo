@@ -22,7 +22,7 @@ final class MockPaymentStatusServiceTest extends TestCase
         $this->service = new MockPaymentStatusService();
     }
 
-    private function createOrder(ContractorType $contractorType, int $orderId = 1): Order
+    private function createOrder(ContractorType $contractorType, bool $isPaid = false, int $orderId = 1): Order
     {
         return new Order(
             new OrderId($orderId),
@@ -31,21 +31,35 @@ final class MockPaymentStatusServiceTest extends TestCase
             1000,
             $contractorType,
             new \DateTimeImmutable(),
-            false, // isPaid
+            $isPaid,
             new OrderItem(1, 1000, 1)
         );
     }
 
-    public function testShouldReturnRandomValueForAnyOrder(): void
+    public function testShouldReturnDatabaseStatusForIndividualOrder(): void
     {
         // Arrange
-        $individualOrder = $this->createOrder(ContractorType::INDIVIDUAL);
+        $unpaidIndividualOrder = $this->createOrder(ContractorType::INDIVIDUAL, false);
+        $paidIndividualOrder = $this->createOrder(ContractorType::INDIVIDUAL, true);
+
+        // Act
+        $unpaidResult = $this->service->checkPaymentStatus($unpaidIndividualOrder);
+        $paidResult = $this->service->checkPaymentStatus($paidIndividualOrder);
+
+        // Assert - For individual orders, service respects database state
+        $this->assertFalse($unpaidResult, 'Should return false for unpaid individual order');
+        $this->assertTrue($paidResult, 'Should return true for paid individual order');
+    }
+
+    public function testShouldReturnRandomValueForLegalEntityOrder(): void
+    {
+        // Arrange
         $legalEntityOrder = $this->createOrder(ContractorType::LEGAL_ENTITY);
 
         // Act - Run multiple times to verify randomness
         $results = [];
         for ($i = 0; $i < 20; $i++) {
-            $results[] = $this->service->checkPaymentStatus($i % 2 === 0 ? $individualOrder : $legalEntityOrder);
+            $results[] = $this->service->checkPaymentStatus($legalEntityOrder);
         }
 
         // Assert - At least one true and one false should appear (very likely with 20 runs)
