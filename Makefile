@@ -1,4 +1,4 @@
-.PHONY: build up down exec logs clean test test-coverage test-coverage-percent test-coverage-save test-coverage-check test-verbose test-file test-filter phpstan phpstan-src deptrack phpcbf phpcbf-src phpcs phpcs-src
+.PHONY: build up down exec logs clean test test-coverage test-coverage-percent test-coverage-save test-coverage-check test-coverage-analyze test-coverage-auto-fix test-verbose test-file test-filter phpstan phpstan-src deptrack phpcbf phpcbf-src phpcs phpcs-src
 
 # Build Docker containers
 build:
@@ -40,7 +40,11 @@ test-coverage:
 		 echo "   make up" && \
 		 exit 1)
 	docker-compose exec -T php mkdir -p coverage
-	docker-compose exec -T -e XDEBUG_MODE=coverage php vendor/bin/phpunit --coverage-html coverage/ --coverage-clover coverage/clover.xml tests/
+	docker-compose exec -T -e XDEBUG_MODE=coverage php vendor/bin/phpunit \
+		--coverage-html coverage/ \
+		--coverage-clover coverage/clover.xml \
+		--coverage-text=coverage/coverage.txt \
+		tests/
 
 # Extract coverage percentage from coverage report
 # Note: Requires coverage report to be generated first with 'make test-coverage'
@@ -58,6 +62,23 @@ test-coverage-save:
 test-coverage-check:
 	$(MAKE) test-coverage
 	@docker-compose exec -T php php scripts/check-coverage-threshold.php coverage/clover.xml coverage_percent
+
+# Analyze coverage report and identify uncovered code (useful when coverage decreased)
+# Note: Requires coverage report to be generated first with 'make test-coverage'
+test-coverage-analyze:
+	@if [ ! -f "coverage/clover.xml" ]; then \
+		echo "Error: Coverage report not found. Running test-coverage first..."; \
+		$(MAKE) test-coverage; \
+	fi
+	@docker-compose exec -T php php scripts/analyze-coverage-and-generate-tests.php coverage/clover.xml
+	@echo ""
+	@echo "📄 For detailed method-level analysis, see: coverage/coverage.txt"
+	@echo "📄 For interactive HTML report, visit: http://localhost:8080/coverage/"
+
+# Automated coverage fix workflow: runs coverage, checks threshold, and provides prioritized list
+# Prioritizes recently modified files (from git diff) as HIGHEST PRIORITY
+test-coverage-auto-fix:
+	@docker-compose exec -T php php scripts/auto-fix-coverage.php --git-diff
 
 # Run tests with debug output
 test-verbose:

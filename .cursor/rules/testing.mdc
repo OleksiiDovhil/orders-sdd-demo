@@ -489,7 +489,10 @@ Follow the standard "Test Execution and Validation" workflow:
 4. **Run all tests** → `make test` and fix any failing tests
 5. **Run PHPStan globally** → `make phpstan` and fix any issues
 6. **Run CodeSniffer globally** → `make phpcbf` then `make phpcs` and fix any remaining issues
-7. **Verify test coverage** → Ensure coverage is maintained after code changes
+7. **Run tests with coverage** → `make test-coverage` to generate coverage report
+8. **Compare coverage with threshold** → `make test-coverage-check` to compare current coverage with `coverage_percent` file
+9. **If coverage decreased** → `make test-coverage-analyze` to identify uncovered code, then create or update tests to restore coverage to at least the previous level
+10. **Verify test coverage** → Ensure coverage is maintained or improved after code changes
 
 ## Testing Requirements
 

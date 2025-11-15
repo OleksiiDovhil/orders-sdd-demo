@@ -178,6 +178,8 @@ The project includes a Makefile with convenient commands for Docker operations:
 - `make test-coverage-percent` - Extract and display coverage percentage from the latest coverage report
 - `make test-coverage-save` - Run tests with coverage and save percentage to `coverage_percent` file
 - `make test-coverage-check` - Run tests with coverage and verify coverage meets threshold in `coverage_percent` file
+- `make test-coverage-analyze` - Analyze coverage report to identify uncovered code (useful when coverage decreased)
+- `make test-coverage-auto-fix` - Automated workflow: runs coverage, checks threshold, prioritizes recently modified files, and guides test creation
 
 ## Services
 
@@ -290,8 +292,9 @@ make up
 ```
 
 This generates:
-- HTML coverage report in `coverage/` directory (open `coverage/index.html` in a browser)
+- HTML coverage report in `coverage/` directory (accessible at http://localhost:8080/coverage/)
 - XML coverage report in `coverage/clover.xml` (for CI/CD integration)
+- Text coverage report in `coverage/coverage.txt` (easy to parse, shows method-level coverage)
 
 Extract coverage percentage (requires coverage report to be generated first):
 ```bash
@@ -311,6 +314,43 @@ This will:
 3. Exit with error code if coverage is below the threshold
 
 This is useful for CI/CD pipelines to ensure coverage doesn't decrease.
+
+Analyze coverage report to identify uncovered code (useful when coverage decreased):
+```bash
+make test-coverage-analyze
+```
+
+This will:
+1. Compare current coverage with the threshold in `coverage_percent` file
+2. If coverage decreased, analyze the coverage report to find:
+   - Classes with uncovered code (sorted by coverage percentage)
+   - Uncovered methods in each class
+   - Uncovered line counts
+3. Display a prioritized list of classes and methods that need test coverage
+4. Provide recommendations for improving coverage
+
+**Automated coverage fix workflow** (recommended):
+```bash
+make test-coverage-auto-fix
+```
+
+This automated workflow will:
+1. **Run tests with coverage** - Generates all coverage reports (HTML, XML, text)
+2. **Check coverage threshold** - Compares current coverage with `coverage_percent` file
+3. **If coverage decreased**:
+   - Analyzes both `coverage.txt` and `clover.xml` to find uncovered code
+   - **Prioritizes recently created/edited files** (from git diff) as **HIGHEST PRIORITY** ⭐
+   - Sorts remaining files by coverage percentage (lowest first)
+   - Provides actionable list with file paths and test locations
+4. **Guides you to add tests** - Shows exactly which files to test and where to create test files
+5. **Iterative process** - After adding tests, run `make test-coverage-check` to verify improvement
+
+**Priority order:**
+1. ⭐ **Recently modified files** (from git diff) - HIGHEST PRIORITY
+2. Files with lowest coverage percentages
+3. Files with most uncovered methods/lines
+
+**Note**: The text coverage report (`coverage/coverage.txt`) provides method-level details that are easy to parse programmatically and is useful for Cursor agents to identify specific uncovered code.
 
 ### Pre-commit Coverage Check
 

@@ -83,6 +83,8 @@ After deployment, create separate PR to:
 - **MANDATORY**: Always include a "Test Execution and Validation" section
 - This section must include tasks to run all tests using `make test`
 - Include tasks to fix any failing tests after code changes
+- Include tasks to run coverage tests (`make test-coverage`) and compare with threshold (`make test-coverage-check`)
+- If coverage decreased, include task to analyze uncovered code (`make test-coverage-analyze`) and create/update tests to restore coverage
 - Test execution is a gate - all tests must pass before work is considered complete
 
 **Running PHP Commands:**
@@ -231,7 +233,16 @@ If multiple capabilities are affected, create multiple delta files under `change
 - [ ] X.7 Run PHPStan globally (with tests folder): `make phpstan` and fix any issues found
 - [ ] X.8 Run CodeSniffer globally (with tests folder): `make phpcbf` to auto-fix issues, then `make phpcs` to verify
 - [ ] X.9 Fix any remaining CodeSniffer violations that phpcbf could not auto-fix
-- [ ] X.10 Verify test coverage is maintained after code changes
+- [ ] X.10 Run automated coverage fix workflow: `make test-coverage-auto-fix` (or manually follow steps X.11-X.14)
+- [ ] X.11 Run tests with coverage: `make test-coverage` to generate coverage report
+- [ ] X.12 Run coverage check: `make test-coverage-check` to compare current coverage with `coverage_percent` file
+- [ ] X.13 If coverage check failed (coverage decreased): 
+  - Run `make test-coverage-auto-fix` to get prioritized list of uncovered code
+  - The tool will prioritize recently created/edited files (from git diff) as HIGHEST PRIORITY
+  - Start adding tests for classes in priority order (highest priority first)
+  - After each test addition, run `make test-coverage-check` to verify improvement
+  - Continue until coverage check passes
+- [ ] X.14 Verify test coverage is maintained or improved after code changes
 ```
 
 **CRITICAL**: Every `tasks.md` MUST include a "Test Execution and Validation" section with explicit tasks to run tests after code changes. This is mandatory regardless of whether new tests are written or only existing code is modified.
@@ -478,7 +489,7 @@ notifications/spec.md
 - **MANDATORY: Feature tests for success cases** - Test happy path with valid data
 - **MANDATORY: Run all tests after code changes** - Use `make test` command
 - **MANDATORY: Fix failing tests before completion** - Never leave tests in a failing state
-- **MANDATORY: Include test execution tasks in tasks.md** - Every proposal MUST have a "Test Execution and Validation" section with explicit tasks following the standard workflow (phpstan-src, codesniffer-src, deptrack, test, phpstan, codesniffer)
+- **MANDATORY: Include test execution tasks in tasks.md** - Every proposal MUST have a "Test Execution and Validation" section with explicit tasks following the standard workflow (phpstan-src, codesniffer-src, deptrack, test, phpstan, codesniffer, test-coverage, test-coverage-check, test-coverage-analyze if coverage decreased)
 - Test missing required fields, invalid types, invalid values, invalid JSON format
 - Verify specific error messages in validation tests
 - Request DTOs must have 100% test coverage
