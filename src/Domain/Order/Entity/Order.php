@@ -22,7 +22,6 @@ final class Order
         private readonly UniqueOrderNumber $uniqueOrderNumber,
         private readonly int $sum,
         private readonly ContractorType $contractorType,
-        private readonly \DateTimeImmutable $createdAt,
         private bool $isPaid = false,
         OrderItem ...$items
     ) {
@@ -58,11 +57,6 @@ final class Order
     public function getContractorType(): ContractorType
     {
         return $this->contractorType;
-    }
-
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return $this->createdAt;
     }
 
     /**

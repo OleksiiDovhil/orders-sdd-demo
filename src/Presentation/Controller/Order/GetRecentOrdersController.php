@@ -55,7 +55,7 @@ final class GetRecentOrdersController extends AbstractController
                         type: 'object',
                         properties: [
                             new OA\Property(
-                                property: 'id',
+                                property: 'uniqueOrderNumber',
                                 type: 'string',
                                 description: 'Unique order number in format YYYY-MM-NNNNN',
                                 example: '2025-11-1'
@@ -150,7 +150,7 @@ final class GetRecentOrdersController extends AbstractController
         // Convert DTOs to array format for JSON response
         $orders = array_map(
             fn ($orderDTO) => [
-                'id' => $orderDTO->id,
+                'uniqueOrderNumber' => $orderDTO->uniqueOrderNumber,
                 'sum' => $orderDTO->sum,
                 'contractorType' => $orderDTO->contractorType,
                 'items' => array_map(

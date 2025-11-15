@@ -133,7 +133,7 @@
                                     "type": "array",
                                     "items": {
                                         "properties": {
-                                            "id": {
+                                            "uniqueOrderNumber": {
                                                 "description": "Unique order number in format YYYY-MM-NNNNN",
                                                 "type": "string",
                                                 "example": "2025-11-1"
@@ -236,58 +236,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "sum",
-                                    "contractorType",
-                                    "items"
-                                ],
-                                "properties": {
-                                    "sum": {
-                                        "description": "Total order amount in cents",
-                                        "type": "integer",
-                                        "example": 1000
-                                    },
-                                    "contractorType": {
-                                        "description": "Contractor type: 1 = individual, 2 = legal entity",
-                                        "type": "integer",
-                                        "enum": [
-                                            1,
-                                            2
-                                        ],
-                                        "example": 1
-                                    },
-                                    "items": {
-                                        "description": "Array of order items",
-                                        "type": "array",
-                                        "items": {
-                                            "required": [
-                                                "productId",
-                                                "price",
-                                                "quantity"
-                                            ],
-                                            "properties": {
-                                                "productId": {
-                                                    "description": "Product identifier",
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "price": {
-                                                    "description": "Product price in cents",
-                                                    "type": "integer",
-                                                    "example": 1000
-                                                },
-                                                "quantity": {
-                                                    "description": "Product quantity",
-                                                    "type": "integer",
-                                                    "minimum": 1,
-                                                    "example": 1
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    }
-                                },
-                                "type": "object"
+                                "$ref": "#/components/schemas/CreateOrderRequest"
                             }
                         }
                     }
@@ -353,6 +302,33 @@
     },
     "components": {
         "schemas": {
+            "OrderItem": {
+                "description": "An item within an order",
+                "required": [
+                    "productId",
+                    "price",
+                    "quantity"
+                ],
+                "properties": {
+                    "productId": {
+                        "description": "Product identifier",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "price": {
+                        "description": "Product price in cents",
+                        "type": "integer",
+                        "example": 1000
+                    },
+                    "quantity": {
+                        "description": "Product quantity",
+                        "type": "integer",
+                        "minimum": 1,
+                        "example": 1
+                    }
+                },
+                "type": "object"
+            },
             "CreateOrderRequest": {
                 "description": "Request body for creating a new order",
                 "required": [
@@ -381,33 +357,6 @@
                         "items": {
                             "$ref": "#/components/schemas/OrderItem"
                         }
-                    }
-                },
-                "type": "object"
-            },
-            "OrderItem": {
-                "description": "An item within an order",
-                "required": [
-                    "productId",
-                    "price",
-                    "quantity"
-                ],
-                "properties": {
-                    "productId": {
-                        "description": "Product identifier",
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "price": {
-                        "description": "Product price in cents",
-                        "type": "integer",
-                        "example": 1000
-                    },
-                    "quantity": {
-                        "description": "Product quantity",
-                        "type": "integer",
-                        "minimum": 1,
-                        "example": 1
                     }
                 },
                 "type": "object"

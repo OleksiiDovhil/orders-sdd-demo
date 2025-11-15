@@ -17,7 +17,10 @@ use Symfony\Component\Yaml\Yaml;
 $outputFile = __DIR__ . '/openapi.json';
 $publicOutputFile = __DIR__ . '/../public/openapi.json';
 $baseConfigFile = __DIR__ . '/openapi.yaml';
-$scanPaths = [__DIR__ . '/../src/Presentation/Controller'];
+$scanPaths = [
+    __DIR__ . '/../src/Presentation/Controller',
+    __DIR__ . '/../src/Presentation/Request',
+];
 
 echo "Generating OpenAPI documentation...\n";
 echo "Scanning paths: " . implode(', ', $scanPaths) . "\n";

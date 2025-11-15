@@ -21,7 +21,6 @@ final class OrderTest extends TestCase
         $orderNumber = new OrderNumber(12345);
         $uniqueOrderNumber = new UniqueOrderNumber('2025-01-12345');
         $contractorType = ContractorType::INDIVIDUAL;
-        $createdAt = new \DateTimeImmutable();
         $item = new OrderItem(1, 1000, 2);
 
         // Act
@@ -31,7 +30,6 @@ final class OrderTest extends TestCase
             $uniqueOrderNumber,
             2000, // sum (independent money field)
             $contractorType,
-            $createdAt,
             false, // isPaid
             $item
         );
@@ -52,7 +50,6 @@ final class OrderTest extends TestCase
         $orderNumber = new OrderNumber(12345);
         $uniqueOrderNumber = new UniqueOrderNumber('2025-01-12345');
         $contractorType = ContractorType::INDIVIDUAL;
-        $createdAt = new \DateTimeImmutable();
 
         // Assert
         $this->expectException(\InvalidArgumentException::class);
@@ -65,7 +62,6 @@ final class OrderTest extends TestCase
             $uniqueOrderNumber,
             -100,
             $contractorType,
-            $createdAt,
             false // isPaid
         );
     }

@@ -43,7 +43,6 @@ final class OrderRepositoryTest extends TestCase
             new UniqueOrderNumber('2025-11-1'),
             1000,
             ContractorType::INDIVIDUAL,
-            new \DateTimeImmutable(),
             $isPaid,
             ...$items
         );
@@ -78,8 +77,8 @@ final class OrderRepositoryTest extends TestCase
                     isset($params[':unique_order_number']) &&
                     isset($params[':sum']) &&
                     isset($params[':contractor_type']) &&
-                    isset($params[':created_at']) &&
-                    isset($params[':is_paid']);
+                    isset($params[':is_paid']) &&
+                    !isset($params[':created_at']); // created_at is now set via CURRENT_TIMESTAMP in SQL
             }));
 
         $stmt->expects($this->once())

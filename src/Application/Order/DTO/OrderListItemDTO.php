@@ -10,7 +10,7 @@ final readonly class OrderListItemDTO
      * @param OrderItemDTO[] $items
      */
     public function __construct(
-        public string $id,
+        public string $uniqueOrderNumber,
         public int $sum,
         public int $contractorType,
         public array $items

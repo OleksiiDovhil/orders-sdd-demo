@@ -39,9 +39,10 @@ final class OrderRepository implements OrderRepositoryInterface
                 ]);
             } else {
                 // Insert new order and get the generated ID
+                // Use database CURRENT_TIMESTAMP to ensure proper microsecond precision
                 $stmt = $this->pdo->prepare('
                     INSERT INTO orders (order_number, unique_order_number, sum, contractor_type, created_at, is_paid)
-                    VALUES (:order_number, :unique_order_number, :sum, :contractor_type, :created_at, :is_paid)
+                    VALUES (:order_number, :unique_order_number, :sum, :contractor_type, CURRENT_TIMESTAMP, :is_paid)
                     RETURNING id
                 ');
 
@@ -50,7 +51,6 @@ final class OrderRepository implements OrderRepositoryInterface
                     ':unique_order_number' => $order->getUniqueOrderNumber()->getValue(),
                     ':sum' => $order->getSum(),
                     ':contractor_type' => $order->getContractorType()->value,
-                    ':created_at' => $order->getCreatedAt()->format('Y-m-d H:i:s'),
                     ':is_paid' => $order->isPaid() ? 1 : 0,
                 ]);
 
@@ -207,8 +207,7 @@ final class OrderRepository implements OrderRepositoryInterface
             !isset($orderData['order_number']) || !is_numeric($orderData['order_number']) ||
             !isset($orderData['sum']) || !is_numeric($orderData['sum']) ||
             !isset($orderData['contractor_type']) || !is_numeric($orderData['contractor_type']) ||
-            !isset($orderData['unique_order_number']) || !is_string($orderData['unique_order_number']) ||
-            !isset($orderData['created_at']) || !is_string($orderData['created_at'])
+            !isset($orderData['unique_order_number']) || !is_string($orderData['unique_order_number'])
         ) {
             throw new \RuntimeException('Invalid order data structure');
         }
@@ -218,7 +217,6 @@ final class OrderRepository implements OrderRepositoryInterface
             new UniqueOrderNumber($orderData['unique_order_number']),
             (int) $orderData['sum'],
             ContractorType::fromInt((int) $orderData['contractor_type']),
-            new \DateTimeImmutable($orderData['created_at']),
             (bool) $orderData['is_paid'],
             ...$orderItems
         );
@@ -262,7 +260,7 @@ final class OrderRepository implements OrderRepositoryInterface
         // Use subquery to get most recent order IDs first, then JOIN to load orders and items
         // This ensures we get exactly the N most recent orders, not N rows total
         $stmt = $this->pdo->prepare('
-            SELECT 
+            SELECT
                 o.id,
                 o.order_number,
                 o.unique_order_number,
@@ -319,7 +317,6 @@ final class OrderRepository implements OrderRepositoryInterface
                 ];
             }
         }
-
         // Build Order entities
         $orders = [];
         foreach ($ordersData as $orderData) {
@@ -341,7 +338,6 @@ final class OrderRepository implements OrderRepositoryInterface
                 new UniqueOrderNumber($orderData['unique_order_number']),
                 $orderData['sum'],
                 ContractorType::fromInt($orderData['contractor_type']),
-                new \DateTimeImmutable($orderData['created_at']),
                 $orderData['is_paid'],
                 ...$orderItems
             );

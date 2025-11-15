@@ -50,7 +50,6 @@ final class GetRecentOrdersHandlerTest extends TestCase
             new UniqueOrderNumber($uniqueOrderNumber),
             $sum,
             $contractorType,
-            new \DateTimeImmutable(),
             false,
             ...$items
         );
@@ -113,7 +112,7 @@ final class GetRecentOrdersHandlerTest extends TestCase
 
         $firstOrder = $result->orders[0];
         $this->assertInstanceOf(OrderListItemDTO::class, $firstOrder);
-        $this->assertEquals('2025-11-1', $firstOrder->id);
+        $this->assertEquals('2025-11-1', $firstOrder->uniqueOrderNumber);
         $this->assertEquals(1000, $firstOrder->sum);
         $this->assertEquals(ContractorType::INDIVIDUAL->value, $firstOrder->contractorType);
         $this->assertCount(1, $firstOrder->items);
@@ -126,7 +125,7 @@ final class GetRecentOrdersHandlerTest extends TestCase
 
         $secondOrder = $result->orders[1];
         $this->assertInstanceOf(OrderListItemDTO::class, $secondOrder);
-        $this->assertEquals('2025-11-2', $secondOrder->id);
+        $this->assertEquals('2025-11-2', $secondOrder->uniqueOrderNumber);
         $this->assertEquals(2000, $secondOrder->sum);
         $this->assertEquals(ContractorType::LEGAL_ENTITY->value, $secondOrder->contractorType);
     }

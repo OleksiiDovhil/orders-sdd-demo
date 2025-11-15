@@ -18,3 +18,4 @@
 # Keep coverage.txt for analysis (it's text-based and easy to parse)
 !/coverage/coverage.txt
 ###< coverage ###
+.idea

@@ -30,7 +30,6 @@ final class MockPaymentStatusServiceTest extends TestCase
             new UniqueOrderNumber('2025-11-1'),
             1000,
             $contractorType,
-            new \DateTimeImmutable(),
             $isPaid,
             new OrderItem(1, 1000, 1)
         );

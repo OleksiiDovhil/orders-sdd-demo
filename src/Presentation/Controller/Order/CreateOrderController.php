@@ -36,53 +36,7 @@ final class CreateOrderController extends AbstractController
             required: true,
             description: 'Order creation data',
             content: new OA\JsonContent(
-                type: 'object',
-                required: ['sum', 'contractorType', 'items'],
-                properties: [
-                    new OA\Property(
-                        property: 'sum',
-                        type: 'integer',
-                        description: 'Total order amount in cents',
-                        example: 1000
-                    ),
-                    new OA\Property(
-                        property: 'contractorType',
-                        type: 'integer',
-                        description: 'Contractor type: 1 = individual, 2 = legal entity',
-                        enum: [1, 2],
-                        example: 1
-                    ),
-                    new OA\Property(
-                        property: 'items',
-                        type: 'array',
-                        description: 'Array of order items',
-                        items: new OA\Items(
-                            type: 'object',
-                            required: ['productId', 'price', 'quantity'],
-                            properties: [
-                                new OA\Property(
-                                    property: 'productId',
-                                    type: 'integer',
-                                    description: 'Product identifier',
-                                    example: 1
-                                ),
-                                new OA\Property(
-                                    property: 'price',
-                                    type: 'integer',
-                                    description: 'Product price in cents',
-                                    example: 1000
-                                ),
-                                new OA\Property(
-                                    property: 'quantity',
-                                    type: 'integer',
-                                    description: 'Product quantity',
-                                    minimum: 1,
-                                    example: 1
-                                ),
-                            ]
-                        )
-                    ),
-                ]
+                ref: '#/components/schemas/CreateOrderRequest'
             )
         ),
         responses: [

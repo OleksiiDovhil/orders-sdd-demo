@@ -44,11 +44,11 @@ final class GetRecentOrdersTest extends WebTestCase
         // Verify structure of first order
         if (isset($response[0]) && is_array($response[0])) {
             $order = $response[0];
-            $this->assertArrayHasKey('id', $order);
+            $this->assertArrayHasKey('uniqueOrderNumber', $order);
             $this->assertArrayHasKey('sum', $order);
             $this->assertArrayHasKey('contractorType', $order);
             $this->assertArrayHasKey('items', $order);
-            $this->assertIsString($order['id']);
+            $this->assertIsString($order['uniqueOrderNumber']);
             $this->assertIsInt($order['sum']);
             $this->assertIsInt($order['contractorType']);
             $this->assertIsArray($order['items']);
@@ -66,13 +66,13 @@ final class GetRecentOrdersTest extends WebTestCase
         }
     }
 
-    public function testShouldReturnOrdersInDescendingOrderByCreationDate(): void
+    public function testShouldReturnOrdersInDescendingOrderByOrderNumber(): void
     {
-        // Arrange - Create orders with delays to ensure different timestamps
+        // Arrange - Create multiple orders to test ordering
         $client = static::createClient();
-        $firstOrderResponse = $this->createOrder($client, 1000, 1);
-        usleep(100000); // 100ms delay
-        $secondOrderResponse = $this->createOrder($client, 2000, 2);
+        $this->createOrder($client, 1000, 1);
+        $this->createOrder($client, 2000, 2);
+        $this->createOrder($client, 3000, 1);
 
         // Act
         $client->request('GET', '/api/orders?limit=10', [], [], [
@@ -89,48 +89,37 @@ final class GetRecentOrdersTest extends WebTestCase
         if (!is_array($response)) {
             $this->fail('Response is not an array');
         }
-        $this->assertGreaterThanOrEqual(2, count($response));
+        $this->assertGreaterThanOrEqual(2, count($response), 'Response should contain at least 2 orders');
 
-        // Verify orders are in descending order by checking the positions of our created orders
-        // The more recent order (secondOrderResponse) should appear before the older one
-        $firstOrderNumber = null;
-        $secondOrderNumber = null;
-        if (
-            isset($firstOrderResponse['uniqueOrderNumber'])
-            && is_string($firstOrderResponse['uniqueOrderNumber'])
-        ) {
-            $firstOrderNumber = $firstOrderResponse['uniqueOrderNumber'];
-        }
-        if (
-            isset($secondOrderResponse['uniqueOrderNumber'])
-            && is_string($secondOrderResponse['uniqueOrderNumber'])
-        ) {
-            $secondOrderNumber = $secondOrderResponse['uniqueOrderNumber'];
-        }
-
-        if ($firstOrderNumber !== null && $secondOrderNumber !== null) {
-            $firstOrderIndex = null;
-            $secondOrderIndex = null;
-
-            foreach ($response as $index => $order) {
-                if (is_array($order) && isset($order['id']) && is_string($order['id'])) {
-                    if ($order['id'] === $firstOrderNumber) {
-                        $firstOrderIndex = $index;
-                    }
-                    if ($order['id'] === $secondOrderNumber) {
-                        $secondOrderIndex = $index;
-                    }
-                }
+        // Go through each order and verify order numbers are in descending order
+        $previousOrderNumber = null;
+        foreach ($response as $index => $order) {
+            if (!is_array($order) || !isset($order['uniqueOrderNumber']) || !is_string($order['uniqueOrderNumber'])) {
+                continue;
             }
 
-            // If both orders are found in the response, the more recent one should come first
-            if ($firstOrderIndex !== null && $secondOrderIndex !== null) {
+            // Extract order number from uniqueOrderNumber (format: YYYY-MM-{order_number})
+            $uniqueOrderNumber = $order['uniqueOrderNumber'];
+            $parts = explode('-', $uniqueOrderNumber);
+            if (count($parts) < 3) {
+                $this->fail("Invalid uniqueOrderNumber format: {$uniqueOrderNumber}");
+            }
+
+            // Order number is the part after the second dash (YYYY-MM-{order_number})
+            $orderNumber = (int) $parts[2];
+
+            // Check that each next order number is less than previous (descending order)
+            if ($previousOrderNumber !== null) {
                 $this->assertLessThan(
-                    $secondOrderIndex,
-                    $firstOrderIndex,
-                    'More recent order (secondOrder) should appear before older order (firstOrder) in the response'
+                    $previousOrderNumber,
+                    $orderNumber,
+                    "Order at index {$index} has order number {$orderNumber} which should be less" .
+                    " than previous order number {$previousOrderNumber}" .
+                    " (orders should be in descending order by order number)"
                 );
             }
+
+            $previousOrderNumber = $orderNumber;
         }
     }
 
@@ -370,14 +359,14 @@ final class GetRecentOrdersTest extends WebTestCase
 
         if (isset($response[0]) && is_array($response[0])) {
             $order = $response[0];
-            $this->assertArrayHasKey('id', $order);
+            $this->assertArrayHasKey('uniqueOrderNumber', $order);
             $this->assertArrayHasKey('sum', $order);
             $this->assertArrayHasKey('contractorType', $order);
             $this->assertArrayHasKey('items', $order);
 
-            // Verify id format (YYYY-MM-NNNNN)
-            if (is_string($order['id'])) {
-                $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d+$/', $order['id']);
+            // Verify uniqueOrderNumber format (YYYY-MM-{order_number})
+            if (is_string($order['uniqueOrderNumber'])) {
+                $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d+$/', $order['uniqueOrderNumber']);
             }
 
             // Verify contractorType is 1 or 2
