@@ -1,0 +1,36 @@
+deptrac:
+  paths:
+    - ./src
+  exclude_files:
+    - '#.*test.*#'
+  layers:
+    - name: Domain
+      collectors:
+        - type: directory
+          value: src/Domain/.*
+    - name: Application
+      collectors:
+        - type: directory
+          value: src/Application/.*
+    - name: Infrastructure
+      collectors:
+        - type: directory
+          value: src/Infrastructure/.*
+    - name: Presentation
+      collectors:
+        - type: directory
+          value: src/Presentation/.*
+  ruleset:
+    # Domain layer must not depend on other layers
+    Domain:
+    # Application layer may depend on Domain layer only
+    Application:
+      - Domain
+    # Infrastructure layer may depend on Domain and Application layers
+    Infrastructure:
+      - Domain
+      - Application
+    # Presentation layer may depend on Application and Domain layers
+    Presentation:
+      - Application
+      - Domain

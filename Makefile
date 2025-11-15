@@ -1,4 +1,4 @@
-.PHONY: build up down exec logs clean test test-unit test-feature test-coverage test-verbose test-file test-filter phpstan
+.PHONY: build up down exec logs clean test test-unit test-feature test-coverage test-verbose test-file test-filter phpstan deptrack
 
 # Build Docker containers
 build:
@@ -68,4 +68,8 @@ test-filter:
 # Run PHPStan static analysis
 phpstan:
 	docker-compose exec -T php php -d memory_limit=512M vendor/bin/phpstan analyse
+
+# Run deptrack dependency analysis
+deptrack:
+	docker-compose exec -T php php -d error_reporting="E_ALL & ~E_DEPRECATED" vendor/bin/deptrac analyse --config-file=deptrac.yaml
 
