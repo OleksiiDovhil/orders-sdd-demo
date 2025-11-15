@@ -28,24 +28,35 @@ final class RequestDeserializer
     {
         // Handle path parameters (e.g., for CheckOrderCompletionRequest)
         if ($class === CheckOrderCompletionRequest::class) {
-            return $this->deserializeCheckOrderCompletionRequest($request);
+            $result = $this->deserializeCheckOrderCompletionRequest($request);
+            // @phpstan-ignore-next-line - Generic type T is correctly narrowed by class check
+            return $result;
         }
 
-        $data = json_decode($request->getContent(), true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \InvalidArgumentException('Invalid JSON format');
+        $content = $request->getContent();
+        if ($content === '') {
+            $data = [];
+        } else {
+            $data = json_decode($content, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \InvalidArgumentException('Invalid JSON format');
+            }
+            if (!is_array($data)) {
+                throw new \InvalidArgumentException('JSON must decode to an array');
+            }
         }
 
         // For nested arrays, we need to manually construct the objects
         // since readonly classes with constructor properties aren't easily denormalizable
         if ($class === CreateOrderRequest::class) {
-            return $this->deserializeCreateOrderRequest($data);
+            $result = $this->deserializeCreateOrderRequest($data);
+            // @phpstan-ignore-next-line - Generic type T is correctly narrowed by class check
+            return $result;
         }
 
         // Fallback to serializer for other types
         $object = $this->serializer->deserialize(
-            $request->getContent(),
+            $content,
             $class,
             'json'
         );
@@ -55,25 +66,34 @@ final class RequestDeserializer
             throw new ValidationFailedException($object, $violations);
         }
 
+        /** @var T */
         return $object;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function deserializeCreateOrderRequest(array $data): CreateOrderRequest
     {
         $items = [];
         if (isset($data['items']) && is_array($data['items'])) {
             foreach ($data['items'] as $itemData) {
+                if (!is_array($itemData)) {
+                    continue;
+                }
                 $items[] = new CreateOrderItemRequest(
-                    $itemData['productId'] ?? 0,
-                    $itemData['price'] ?? 0,
-                    $itemData['quantity'] ?? 0
+                    isset($itemData['productId']) && is_numeric($itemData['productId']) ? (int) $itemData['productId'] : 0,
+                    isset($itemData['price']) && is_numeric($itemData['price']) ? (int) $itemData['price'] : 0,
+                    isset($itemData['quantity']) && is_numeric($itemData['quantity']) ? (int) $itemData['quantity'] : 0
                 );
             }
         }
 
+        $sum = isset($data['sum']) && is_numeric($data['sum']) ? (int) $data['sum'] : 0;
+        $contractorType = isset($data['contractorType']) && is_numeric($data['contractorType']) ? (int) $data['contractorType'] : 0;
         $request = new CreateOrderRequest(
-            $data['sum'] ?? 0,
-            $data['contractorType'] ?? 0,
+            $sum,
+            $contractorType,
             $items
         );
 
@@ -93,7 +113,11 @@ final class RequestDeserializer
             throw new \InvalidArgumentException('uniqueOrderNumber path parameter is required');
         }
 
-        $requestObject = new CheckOrderCompletionRequest((string) $uniqueOrderNumber);
+        if (!is_string($uniqueOrderNumber)) {
+            throw new \InvalidArgumentException('uniqueOrderNumber must be a string');
+        }
+
+        $requestObject = new CheckOrderCompletionRequest($uniqueOrderNumber);
 
         $violations = $this->validator->validate($requestObject);
         if (count($violations) > 0) {

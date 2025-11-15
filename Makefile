@@ -1,4 +1,4 @@
-.PHONY: build up down exec logs clean test test-unit test-feature test-coverage test-verbose test-file test-filter
+.PHONY: build up down exec logs clean test test-unit test-feature test-coverage test-verbose test-file test-filter phpstan
 
 # Build Docker containers
 build:
@@ -64,4 +64,8 @@ test-filter:
 		exit 1; \
 	fi
 	docker-compose exec -T php vendor/bin/phpunit tests/ --filter $(FILTER)
+
+# Run PHPStan static analysis
+phpstan:
+	docker-compose exec -T php php -d memory_limit=512M vendor/bin/phpstan analyse
 

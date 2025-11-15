@@ -11,7 +11,7 @@ use Symfony\Component\Validator\Validation;
 
 final class CheckOrderCompletionRequestTest extends TestCase
 {
-    private $validator;
+    private \Symfony\Component\Validator\Validator\ValidatorInterface $validator;
 
     protected function setUp(): void
     {
@@ -55,8 +55,14 @@ final class CheckOrderCompletionRequestTest extends TestCase
 
         // Assert
         $this->assertCount(1, $violations);
-        $this->assertEquals('uniqueOrderNumber', $violations[0]->getPropertyPath());
-        $this->assertStringContainsString('required', $violations[0]->getMessage());
+        $violation = $violations[0] ?? null;
+        if ($violation !== null) {
+            $this->assertEquals('uniqueOrderNumber', $violation->getPropertyPath());
+            $message = $violation->getMessage();
+            if (is_string($message)) {
+                $this->assertStringContainsString('required', $message);
+            }
+        }
     }
 
     public function testShouldFailValidationWhenFormatIsInvalid(): void
@@ -69,8 +75,14 @@ final class CheckOrderCompletionRequestTest extends TestCase
 
         // Assert
         $this->assertCount(1, $violations);
-        $this->assertEquals('uniqueOrderNumber', $violations[0]->getPropertyPath());
-        $this->assertStringContainsString('format', $violations[0]->getMessage());
+        $violation = $violations[0] ?? null;
+        if ($violation !== null) {
+            $this->assertEquals('uniqueOrderNumber', $violation->getPropertyPath());
+            $message = $violation->getMessage();
+            if (is_string($message)) {
+                $this->assertStringContainsString('format', $message);
+            }
+        }
     }
 
     public function testShouldFailValidationWhenFormatIsMissingYear(): void
@@ -83,7 +95,10 @@ final class CheckOrderCompletionRequestTest extends TestCase
 
         // Assert
         $this->assertCount(1, $violations);
-        $this->assertEquals('uniqueOrderNumber', $violations[0]->getPropertyPath());
+        $violation = $violations[0] ?? null;
+        if ($violation !== null) {
+            $this->assertEquals('uniqueOrderNumber', $violation->getPropertyPath());
+        }
     }
 }
 

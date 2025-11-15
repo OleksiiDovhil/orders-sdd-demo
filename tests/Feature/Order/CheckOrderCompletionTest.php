@@ -8,6 +8,9 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class CheckOrderCompletionTest extends WebTestCase
 {
+    /**
+     * @param array<string, mixed> $options
+     */
     protected static function createKernel(array $options = []): \Symfony\Component\HttpKernel\KernelInterface
     {
         return new \App\Kernel('test', true);
@@ -27,22 +30,37 @@ final class CheckOrderCompletionTest extends WebTestCase
             ],
         ];
 
+        $jsonData = json_encode($requestData);
+        if ($jsonData === false) {
+            $this->fail('Failed to encode request data to JSON');
+        }
         $client->request('POST', '/api/orders', [], [], [
             'CONTENT_TYPE' => 'application/json',
-        ], json_encode($requestData));
+        ], $jsonData);
 
         $this->assertResponseStatusCodeSame(201);
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $responseContent = $client->getResponse()->getContent();
+        if ($responseContent === false) {
+            $this->fail('Response content is false');
+        }
+        $response = json_decode($responseContent, true);
+        if (!is_array($response) || !isset($response['uniqueOrderNumber']) || !is_string($response['uniqueOrderNumber'])) {
+            $this->fail('Invalid response format');
+        }
         $uniqueOrderNumber = $response['uniqueOrderNumber'];
 
         // Update is_paid for individual orders
-        if ($contractorType === 1 && $isPaid) {
+        if ($contractorType === 1 && $isPaid === true) {
             $pdo = static::getContainer()->get(\PDO::class);
-            $stmt = $pdo->prepare('UPDATE orders SET is_paid = :is_paid WHERE unique_order_number = :unique_order_number');
-            $stmt->execute([
-                ':is_paid' => $isPaid ? 1 : 0,
-                ':unique_order_number' => $uniqueOrderNumber,
-            ]);
+            if ($pdo instanceof \PDO) {
+                $stmt = $pdo->prepare('UPDATE orders SET is_paid = :is_paid WHERE unique_order_number = :unique_order_number');
+                if ($stmt !== false) {
+                    $stmt->execute([
+                        ':is_paid' => 1,
+                        ':unique_order_number' => $uniqueOrderNumber,
+                    ]);
+                }
+            }
         }
 
         return $uniqueOrderNumber;
@@ -59,7 +77,14 @@ final class CheckOrderCompletionTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(200);
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $responseContent = $client->getResponse()->getContent();
+        if ($responseContent === false) {
+            $this->fail('Response content is false');
+        }
+        $response = json_decode($responseContent, true);
+        if (!is_array($response)) {
+            $this->fail('Response is not an array');
+        }
         $this->assertArrayHasKey('isPaid', $response);
         $this->assertArrayHasKey('message', $response);
         $this->assertTrue($response['isPaid']);
@@ -77,7 +102,14 @@ final class CheckOrderCompletionTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(200);
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $responseContent = $client->getResponse()->getContent();
+        if ($responseContent === false) {
+            $this->fail('Response content is false');
+        }
+        $response = json_decode($responseContent, true);
+        if (!is_array($response)) {
+            $this->fail('Response is not an array');
+        }
         $this->assertArrayHasKey('isPaid', $response);
         $this->assertArrayHasKey('message', $response);
         $this->assertFalse($response['isPaid']);
@@ -95,7 +127,14 @@ final class CheckOrderCompletionTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(200);
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $responseContent = $client->getResponse()->getContent();
+        if ($responseContent === false) {
+            $this->fail('Response content is false');
+        }
+        $response = json_decode($responseContent, true);
+        if (!is_array($response)) {
+            $this->fail('Response is not an array');
+        }
         $this->assertArrayHasKey('isPaid', $response);
         $this->assertArrayHasKey('message', $response);
         // For legal entities, the mock returns random values, so we just verify structure
@@ -114,13 +153,10 @@ final class CheckOrderCompletionTest extends WebTestCase
         // Assert
         $this->assertResponseStatusCodeSame(404);
         $responseContent = $client->getResponse()->getContent();
-        if ($responseContent !== null && $responseContent !== '') {
+        if (is_string($responseContent) && $responseContent !== '') {
             $response = json_decode($responseContent, true);
-            if ($response !== null) {
-                $this->assertIsArray($response);
-                if (isset($response['error'])) {
-                    $this->assertStringContainsString('not found', strtolower($response['error']));
-                }
+            if (is_array($response) && isset($response['error']) && is_string($response['error'])) {
+                $this->assertStringContainsString('not found', strtolower($response['error']));
             }
         }
     }
@@ -135,9 +171,18 @@ final class CheckOrderCompletionTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(400);
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $responseContent = $client->getResponse()->getContent();
+        if ($responseContent === false) {
+            $this->fail('Response content is false');
+        }
+        $response = json_decode($responseContent, true);
+        if (!is_array($response)) {
+            $this->fail('Response is not an array');
+        }
         $this->assertArrayHasKey('errors', $response);
-        $this->assertArrayHasKey('uniqueOrderNumber', $response['errors']);
+        if (is_array($response['errors'])) {
+            $this->assertArrayHasKey('uniqueOrderNumber', $response['errors']);
+        }
     }
 
     public function testShouldReturn400WhenUniqueOrderNumberFormatIsMissingYear(): void
@@ -150,9 +195,18 @@ final class CheckOrderCompletionTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(400);
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $responseContent = $client->getResponse()->getContent();
+        if ($responseContent === false) {
+            $this->fail('Response content is false');
+        }
+        $response = json_decode($responseContent, true);
+        if (!is_array($response)) {
+            $this->fail('Response is not an array');
+        }
         $this->assertArrayHasKey('errors', $response);
-        $this->assertArrayHasKey('uniqueOrderNumber', $response['errors']);
+        if (is_array($response['errors'])) {
+            $this->assertArrayHasKey('uniqueOrderNumber', $response['errors']);
+        }
     }
 
     public function testShouldVerifyResponseStructure(): void
@@ -166,7 +220,14 @@ final class CheckOrderCompletionTest extends WebTestCase
 
         // Assert
         $this->assertResponseStatusCodeSame(200);
-        $response = json_decode($client->getResponse()->getContent(), true);
+        $responseContent = $client->getResponse()->getContent();
+        if ($responseContent === false) {
+            $this->fail('Response content is false');
+        }
+        $response = json_decode($responseContent, true);
+        if (!is_array($response)) {
+            $this->fail('Response is not an array');
+        }
         
         // Verify exact structure
         $this->assertCount(2, $response);

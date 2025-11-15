@@ -16,6 +16,9 @@ final class RequestValueResolver implements ValueResolverInterface
     ) {
     }
 
+    /**
+     * @return iterable<object>
+     */
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
         $type = $argument->getType();

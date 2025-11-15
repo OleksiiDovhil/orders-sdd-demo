@@ -15,6 +15,9 @@ final class OrderNumberGenerator
     ) {
     }
 
+    /**
+     * @return array{orderNumber: OrderNumber, uniqueOrderNumber: UniqueOrderNumber}
+     */
     public function generate(): array
     {
         $orderNumber = $this->orderRepository->getNextOrderNumber();

@@ -55,6 +55,9 @@ final class OrderRepository implements OrderRepositoryInterface
                 ]);
 
                 $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if (!is_array($result) || !isset($result['id']) || !is_numeric($result['id'])) {
+                    throw new \RuntimeException('Failed to get order ID after insert');
+                }
                 $orderId = (int) $result['id'];
 
                 // Insert order items
@@ -102,9 +105,9 @@ final class OrderRepository implements OrderRepositoryInterface
             $stmt->execute();
             $sequence = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-            if ($sequence) {
+            if (is_array($sequence) && isset($sequence['sequence_number']) && isset($sequence['id']) && is_numeric($sequence['sequence_number'])) {
                 // Update existing sequence - increment for current month
-                $nextNumber = $sequence['sequence_number'] + 1;
+                $nextNumber = (int) $sequence['sequence_number'] + 1;
                 $updateStmt = $this->pdo->prepare('
                     UPDATE order_number_sequences
                     SET sequence_number = :sequence_number, updated_at = CURRENT_TIMESTAMP
@@ -112,13 +115,19 @@ final class OrderRepository implements OrderRepositoryInterface
                 ');
                 $updateStmt->execute([
                     ':sequence_number' => $nextNumber,
-                    ':id' => $sequence['id'],
+                    ':id' => is_numeric($sequence['id']) ? (int) $sequence['id'] : throw new \RuntimeException('Invalid sequence ID'),
                 ]);
             } else {
                 // Create new sequence for this month
                 // Find the highest sequence number to ensure uniqueness
                 $maxStmt = $this->pdo->query('SELECT COALESCE(MAX(sequence_number), 0) as max_seq FROM order_number_sequences');
+                if ($maxStmt === false) {
+                    throw new \RuntimeException('Failed to query max sequence number');
+                }
                 $maxResult = $maxStmt->fetch(\PDO::FETCH_ASSOC);
+                if (!is_array($maxResult) || !isset($maxResult['max_seq']) || !is_numeric($maxResult['max_seq'])) {
+                    throw new \RuntimeException('Failed to get max sequence number');
+                }
                 $nextNumber = (int) $maxResult['max_seq'] + 1;
 
                 $insertStmt = $this->pdo->prepare('
@@ -153,7 +162,7 @@ final class OrderRepository implements OrderRepositoryInterface
 
         $orderData = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if ($orderData === false) {
+        if (!is_array($orderData) || !isset($orderData['id']) || !is_numeric($orderData['id'])) {
             return null;
         }
 
@@ -166,13 +175,16 @@ final class OrderRepository implements OrderRepositoryInterface
         ');
 
         $itemStmt->execute([
-            ':order_id' => $orderData['id'],
+            ':order_id' => (int) $orderData['id'],
         ]);
 
         $itemsData = $itemStmt->fetchAll(\PDO::FETCH_ASSOC);
 
         // Build order items
         $orderItems = array_map(
+            /**
+             * @param array{product_id: int|string, price: int|string, quantity: int|string} $itemData
+             */
             fn (array $itemData) => new OrderItem(
                 (int) $itemData['product_id'],
                 (int) $itemData['price'],
@@ -182,6 +194,13 @@ final class OrderRepository implements OrderRepositoryInterface
         );
 
         // Reconstruct Order entity
+        if (!isset($orderData['order_number']) || !is_numeric($orderData['order_number']) ||
+            !isset($orderData['sum']) || !is_numeric($orderData['sum']) ||
+            !isset($orderData['contractor_type']) || !is_numeric($orderData['contractor_type']) ||
+            !isset($orderData['unique_order_number']) || !is_string($orderData['unique_order_number']) ||
+            !isset($orderData['created_at']) || !is_string($orderData['created_at'])) {
+            throw new \RuntimeException('Invalid order data structure');
+        }
         return new Order(
             new OrderId((int) $orderData['id']),
             new OrderNumber((int) $orderData['order_number']),
@@ -208,7 +227,7 @@ final class OrderRepository implements OrderRepositoryInterface
 
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        return $result !== false && (bool) $result['is_paid'];
+        return is_array($result) && isset($result['is_paid']) && (bool) $result['is_paid'];
     }
 
     public function markAsPaid(OrderId $orderId): void

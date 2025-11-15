@@ -31,6 +31,9 @@ final class CreateOrderRequestSchema
     )]
     public int $contractorType;
 
+    /**
+     * @var array<int, array<string, mixed>>
+     */
     #[OA\Property(
         property: 'items',
         type: 'array',
