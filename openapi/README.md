@@ -5,7 +5,8 @@ This folder contains all OpenAPI-related files for the Order Management API.
 ## Files
 
 - `generate.php` - Script to generate OpenAPI documentation from PHP attributes
-- `openapi.json` - Generated OpenAPI 3.0 specification file
+- `openapi.yaml` - Base OpenAPI configuration (info, servers) in YAML format
+- `openapi.json` - Generated OpenAPI 3.0 specification file (merged from YAML + PHP attributes)
 - `README.md` - This file
 
 ## Generation
@@ -31,6 +32,14 @@ docker-compose exec php php openapi/generate.php
 3. Click "Try it out" on any endpoint to test it directly
 4. Fill in the request parameters and click "Execute" to make real API calls
 
+## Configuration
+
+The base OpenAPI configuration (info, servers) is defined in `openapi.yaml`. This file contains:
+- API title, description, and version
+- Server URLs and descriptions
+
+The generation script merges this base configuration with PHP attributes from controllers to create the final OpenAPI specification.
+
 ## Adding Documentation
 
 Document your endpoints using OpenAPI attributes in your controllers:
@@ -50,4 +59,7 @@ public function createOrder(Request $request): JsonResponse
 }
 ```
 
-The generation script will automatically pick up these attributes and include them in the OpenAPI specification.
+The generation script will automatically:
+1. Load base configuration from `openapi.yaml`
+2. Scan PHP attributes from controllers
+3. Merge them together to create the final OpenAPI specification

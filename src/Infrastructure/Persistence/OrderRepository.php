@@ -253,4 +253,100 @@ final class OrderRepository implements OrderRepositoryInterface
             ':id' => $orderId->getValue(),
         ]);
     }
+
+    /**
+     * @return Order[]
+     */
+    public function findRecentOrders(int $limit): array
+    {
+        // Use subquery to get most recent order IDs first, then JOIN to load orders and items
+        // This ensures we get exactly the N most recent orders, not N rows total
+        $stmt = $this->pdo->prepare('
+            SELECT 
+                o.id,
+                o.order_number,
+                o.unique_order_number,
+                o.sum,
+                o.contractor_type,
+                o.created_at,
+                o.is_paid,
+                oi.product_id,
+                oi.price,
+                oi.quantity
+            FROM (
+                SELECT id
+                FROM orders
+                ORDER BY created_at DESC
+                LIMIT :limit
+            ) recent_orders
+            JOIN orders o ON recent_orders.id = o.id
+            LEFT JOIN order_items oi ON o.id = oi.order_id
+            ORDER BY o.created_at DESC
+        ');
+
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        if (empty($results)) {
+            return [];
+        }
+
+        // Group results by order ID
+        $ordersData = [];
+        foreach ($results as $row) {
+            $orderId = (int) $row['id'];
+            if (!isset($ordersData[$orderId])) {
+                $ordersData[$orderId] = [
+                    'id' => $orderId,
+                    'order_number' => (int) $row['order_number'],
+                    'unique_order_number' => $row['unique_order_number'],
+                    'sum' => (int) $row['sum'],
+                    'contractor_type' => (int) $row['contractor_type'],
+                    'created_at' => $row['created_at'],
+                    'is_paid' => (bool) $row['is_paid'],
+                    'items' => [],
+                ];
+            }
+
+            // Add item if product_id is not null (LEFT JOIN may return null for orders without items)
+            if ($row['product_id'] !== null) {
+                $ordersData[$orderId]['items'][] = [
+                    'product_id' => (int) $row['product_id'],
+                    'price' => (int) $row['price'],
+                    'quantity' => (int) $row['quantity'],
+                ];
+            }
+        }
+
+        // Build Order entities
+        $orders = [];
+        foreach ($ordersData as $orderData) {
+            $orderItems = array_map(
+                /**
+                 * @param array{product_id: int, price: int, quantity: int} $itemData
+                 */
+                fn (array $itemData) => new OrderItem(
+                    $itemData['product_id'],
+                    $itemData['price'],
+                    $itemData['quantity']
+                ),
+                $orderData['items']
+            );
+
+            $orders[] = new Order(
+                new OrderId($orderData['id']),
+                new OrderNumber($orderData['order_number']),
+                new UniqueOrderNumber($orderData['unique_order_number']),
+                $orderData['sum'],
+                ContractorType::fromInt($orderData['contractor_type']),
+                new \DateTimeImmutable($orderData['created_at']),
+                $orderData['is_paid'],
+                ...$orderItems
+            );
+        }
+
+        return $orders;
+    }
 }

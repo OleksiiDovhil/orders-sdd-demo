@@ -1,16 +1,5 @@
 {
-    "openapi": "3.0.0",
-    "info": {
-        "title": "Order Management API",
-        "description": "API for creating and managing orders",
-        "version": "1.0.0"
-    },
-    "servers": [
-        {
-            "url": "http://localhost:8080",
-            "description": "Local development server"
-        }
-    ],
+    "openapi": "3.1.0",
     "paths": {
         "/api/orders/{uniqueOrderNumber}/complete": {
             "get": {
@@ -114,6 +103,126 @@
             }
         },
         "/api/orders": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get recent orders",
+                "description": "Returns the specified number of most recent orders, ordered by creation date (most recent first).",
+                "operationId": "09cfb5729d4ac32ffc8ef8deda810aa5",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of orders to return",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 1000,
+                            "minimum": 1,
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Recent orders retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "description": "Unique order number in format YYYY-MM-NNNNN",
+                                                "type": "string",
+                                                "example": "2025-11-1"
+                                            },
+                                            "sum": {
+                                                "description": "Total order amount in cents",
+                                                "type": "integer",
+                                                "example": 1000
+                                            },
+                                            "contractorType": {
+                                                "description": "Contractor type: 1 = individual, 2 = legal entity",
+                                                "type": "integer",
+                                                "enum": [
+                                                    1,
+                                                    2
+                                                ],
+                                                "example": 1
+                                            },
+                                            "items": {
+                                                "description": "Order items",
+                                                "type": "array",
+                                                "items": {
+                                                    "properties": {
+                                                        "productId": {
+                                                            "description": "Product ID",
+                                                            "type": "integer",
+                                                            "example": 123
+                                                        },
+                                                        "price": {
+                                                            "description": "Price per unit in cents",
+                                                            "type": "integer",
+                                                            "example": 500
+                                                        },
+                                                        "quantity": {
+                                                            "description": "Quantity",
+                                                            "type": "integer",
+                                                            "example": 2
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "description": "Validation errors",
+                                            "properties": {
+                                                "limit": {
+                                                    "type": "string",
+                                                    "example": "Limit is required"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Internal server error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "tags": [
                     "Orders"
@@ -309,6 +418,17 @@
         {
             "name": "Orders",
             "description": "Order management endpoints"
+        }
+    ],
+    "info": {
+        "title": "Order Management API",
+        "description": "API for creating and managing orders",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8080",
+            "description": "Local development server"
         }
     ]
 }

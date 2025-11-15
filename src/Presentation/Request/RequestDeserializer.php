@@ -33,6 +33,13 @@ final class RequestDeserializer
             return $result;
         }
 
+        // Handle query parameters (e.g., for GetRecentOrdersRequest)
+        if ($class === GetRecentOrdersRequest::class) {
+            $result = $this->deserializeGetRecentOrdersRequest($request);
+            // @phpstan-ignore-next-line - Generic type T is correctly narrowed by class check
+            return $result;
+        }
+
         $content = $request->getContent();
         if ($content === '') {
             $data = [];
@@ -128,6 +135,30 @@ final class RequestDeserializer
         }
 
         $requestObject = new CheckOrderCompletionRequest($uniqueOrderNumber);
+
+        $violations = $this->validator->validate($requestObject);
+        if (count($violations) > 0) {
+            throw new ValidationFailedException($requestObject, $violations);
+        }
+
+        return $requestObject;
+    }
+
+    private function deserializeGetRecentOrdersRequest(Request $request): GetRecentOrdersRequest
+    {
+        $limitParam = $request->query->get('limit');
+
+        if ($limitParam === null) {
+            throw new \InvalidArgumentException('limit query parameter is required');
+        }
+
+        if (!is_numeric($limitParam)) {
+            throw new \InvalidArgumentException('limit must be numeric');
+        }
+
+        $limit = (int) $limitParam;
+
+        $requestObject = new GetRecentOrdersRequest($limit);
 
         $violations = $this->validator->validate($requestObject);
         if (count($violations) > 0) {

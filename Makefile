@@ -1,4 +1,4 @@
-.PHONY: build up down exec logs clean test test-coverage test-coverage-percent test-coverage-save test-coverage-check test-coverage-analyze test-coverage-auto-fix test-verbose test-file test-filter phpstan phpstan-src deptrack phpcbf phpcbf-src phpcs phpcs-src
+.PHONY: build up down exec logs clean openapi test test-coverage test-coverage-percent test-coverage-save test-coverage-check test-coverage-analyze test-coverage-auto-fix test-verbose test-file test-filter phpstan phpstan-src deptrack phpcbf phpcbf-src phpcs phpcs-src
 
 # Build Docker containers
 build:
@@ -24,6 +24,10 @@ logs:
 clean:
 	docker-compose down -v
 	docker-compose rm -f
+
+# Generate OpenAPI/Swagger documentation
+openapi:
+	docker-compose exec -T php php openapi/generate.php
 
 # Run all tests
 test:

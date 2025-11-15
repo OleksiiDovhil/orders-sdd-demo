@@ -650,4 +650,158 @@ final class OrderRepositoryTest extends TestCase
         // Act
         $this->repository->getNextOrderNumber();
     }
+
+    public function testShouldReturnEmptyArrayWhenNoRecentOrdersExist(): void
+    {
+        // Arrange
+        $stmt = $this->createMock(\PDOStatement::class);
+
+        $this->pdo->expects($this->once())
+            ->method('prepare')
+            ->willReturn($stmt);
+
+        $stmt->expects($this->once())
+            ->method('bindValue')
+            ->with(':limit', 5, \PDO::PARAM_INT);
+
+        $stmt->expects($this->once())
+            ->method('execute');
+
+        $stmt->expects($this->once())
+            ->method('fetchAll')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn([]);
+
+        // Act
+        $result = $this->repository->findRecentOrders(5);
+
+        // Assert
+        $this->assertEmpty($result);
+    }
+
+    public function testShouldReturnRecentOrdersWithItems(): void
+    {
+        // Arrange
+        $stmt = $this->createMock(\PDOStatement::class);
+
+        $this->pdo->expects($this->once())
+            ->method('prepare')
+            ->willReturn($stmt);
+
+        $stmt->expects($this->once())
+            ->method('bindValue')
+            ->with(':limit', 2, \PDO::PARAM_INT);
+
+        $stmt->expects($this->once())
+            ->method('execute');
+
+        $stmt->expects($this->once())
+            ->method('fetchAll')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn([
+                [
+                    'id' => '1',
+                    'order_number' => '1',
+                    'unique_order_number' => '2025-11-1',
+                    'sum' => '1000',
+                    'contractor_type' => '1',
+                    'created_at' => '2025-11-15 10:00:00',
+                    'is_paid' => '0',
+                    'product_id' => '1',
+                    'price' => '500',
+                    'quantity' => '2',
+                ],
+                [
+                    'id' => '1',
+                    'order_number' => '1',
+                    'unique_order_number' => '2025-11-1',
+                    'sum' => '1000',
+                    'contractor_type' => '1',
+                    'created_at' => '2025-11-15 10:00:00',
+                    'is_paid' => '0',
+                    'product_id' => '2',
+                    'price' => '500',
+                    'quantity' => '1',
+                ],
+                [
+                    'id' => '2',
+                    'order_number' => '2',
+                    'unique_order_number' => '2025-11-2',
+                    'sum' => '2000',
+                    'contractor_type' => '2',
+                    'created_at' => '2025-11-15 09:00:00',
+                    'is_paid' => '0',
+                    'product_id' => '3',
+                    'price' => '2000',
+                    'quantity' => '1',
+                ],
+            ]);
+
+        // Act
+        $result = $this->repository->findRecentOrders(2);
+
+        // Assert
+        $this->assertCount(2, $result);
+
+        $firstOrder = $result[0];
+        $this->assertInstanceOf(Order::class, $firstOrder);
+        $this->assertEquals(1, $firstOrder->getId()->getValue());
+        $this->assertEquals('2025-11-1', $firstOrder->getUniqueOrderNumber()->getValue());
+        $this->assertEquals(1000, $firstOrder->getSum());
+        $this->assertEquals(ContractorType::INDIVIDUAL, $firstOrder->getContractorType());
+        $this->assertCount(2, $firstOrder->getItems());
+
+        $secondOrder = $result[1];
+        $this->assertInstanceOf(Order::class, $secondOrder);
+        $this->assertEquals(2, $secondOrder->getId()->getValue());
+        $this->assertEquals('2025-11-2', $secondOrder->getUniqueOrderNumber()->getValue());
+        $this->assertEquals(2000, $secondOrder->getSum());
+        $this->assertEquals(ContractorType::LEGAL_ENTITY, $secondOrder->getContractorType());
+        $this->assertCount(1, $secondOrder->getItems());
+    }
+
+    public function testShouldReturnOrderWithoutItemsWhenNoItemsExist(): void
+    {
+        // Arrange
+        $stmt = $this->createMock(\PDOStatement::class);
+
+        $this->pdo->expects($this->once())
+            ->method('prepare')
+            ->willReturn($stmt);
+
+        $stmt->expects($this->once())
+            ->method('bindValue')
+            ->with(':limit', 1, \PDO::PARAM_INT);
+
+        $stmt->expects($this->once())
+            ->method('execute');
+
+        $stmt->expects($this->once())
+            ->method('fetchAll')
+            ->with(\PDO::FETCH_ASSOC)
+            ->willReturn([
+                [
+                    'id' => '1',
+                    'order_number' => '1',
+                    'unique_order_number' => '2025-11-1',
+                    'sum' => '1000',
+                    'contractor_type' => '1',
+                    'created_at' => '2025-11-15 10:00:00',
+                    'is_paid' => '0',
+                    'product_id' => null,
+                    'price' => null,
+                    'quantity' => null,
+                ],
+            ]);
+
+        // Act
+        $result = $this->repository->findRecentOrders(1);
+
+        // Assert
+        $this->assertCount(1, $result);
+
+        $order = $result[0];
+        $this->assertInstanceOf(Order::class, $order);
+        $this->assertEmpty($order->getItems());
+    }
 }

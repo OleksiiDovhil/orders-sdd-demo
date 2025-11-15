@@ -19,4 +19,9 @@ interface OrderRepositoryInterface
     public function isPaid(OrderId $orderId): bool;
 
     public function markAsPaid(OrderId $orderId): void;
+
+    /**
+     * @return Order[]
+     */
+    public function findRecentOrders(int $limit): array;
 }

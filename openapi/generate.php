@@ -11,41 +11,46 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 use OpenApi\Generator;
+use Symfony\Component\Yaml\Yaml;
 
 // Generate to both openapi folder and public folder for web access
 $outputFile = __DIR__ . '/openapi.json';
 $publicOutputFile = __DIR__ . '/../public/openapi.json';
+$baseConfigFile = __DIR__ . '/openapi.yaml';
 $scanPaths = [__DIR__ . '/../src/Presentation/Controller'];
 
 echo "Generating OpenAPI documentation...\n";
 echo "Scanning paths: " . implode(', ', $scanPaths) . "\n";
 
 try {
+    // Load base configuration from YAML file
+    $baseConfig = [];
+    if (file_exists($baseConfigFile)) {
+        echo "Loading base configuration from: {$baseConfigFile}\n";
+        $baseConfig = Yaml::parseFile($baseConfigFile);
+    }
+
+    // Scan PHP attributes for paths and schemas
     $openapi = Generator::scan($scanPaths, [
         'exclude' => ['vendor', 'tests', 'node_modules'],
     ]);
 
     $json = $openapi->toJson();
-    
-    // Merge with base configuration from nelmio config
     $data = json_decode($json, true);
     
-    // Add info from config if not present
-    if (!isset($data['info'])) {
-        $data['info'] = [
-            'title' => 'Order Management API',
-            'description' => 'API for creating and managing orders',
-            'version' => '1.0.0',
-        ];
+    // Merge base configuration (info, servers) with scanned paths/schemas
+    // Base config takes precedence for info and servers
+    if (isset($baseConfig['info'])) {
+        $data['info'] = $baseConfig['info'];
     }
     
-    if (!isset($data['servers'])) {
-        $data['servers'] = [
-            [
-                'url' => 'http://localhost:8080',
-                'description' => 'Local development server',
-            ],
-        ];
+    if (isset($baseConfig['servers'])) {
+        $data['servers'] = $baseConfig['servers'];
+    }
+    
+    // Ensure openapi version is set
+    if (isset($baseConfig['openapi'])) {
+        $data['openapi'] = $baseConfig['openapi'];
     }
 
     $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
