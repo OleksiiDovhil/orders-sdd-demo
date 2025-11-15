@@ -56,4 +56,3 @@ final class RedirectUrlGeneratorTest extends TestCase
         $this->assertSame('http://some-pay-agregator.com/pay/2025-01-12345', $url);
     }
 }
-

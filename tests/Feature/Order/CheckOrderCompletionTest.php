@@ -16,8 +16,11 @@ final class CheckOrderCompletionTest extends WebTestCase
         return new \App\Kernel('test', true);
     }
 
-    private function createOrder(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client, int $contractorType, bool $isPaid = false): string
-    {
+    private function createOrder(
+        \Symfony\Bundle\FrameworkBundle\KernelBrowser $client,
+        int $contractorType,
+        bool $isPaid = false
+    ): string {
         $requestData = [
             'sum' => 1000,
             'contractorType' => $contractorType,
@@ -44,7 +47,11 @@ final class CheckOrderCompletionTest extends WebTestCase
             $this->fail('Response content is false');
         }
         $response = json_decode($responseContent, true);
-        if (!is_array($response) || !isset($response['uniqueOrderNumber']) || !is_string($response['uniqueOrderNumber'])) {
+        if (
+            !is_array($response)
+            || !isset($response['uniqueOrderNumber'])
+            || !is_string($response['uniqueOrderNumber'])
+        ) {
             $this->fail('Invalid response format');
         }
         $uniqueOrderNumber = $response['uniqueOrderNumber'];
@@ -53,7 +60,9 @@ final class CheckOrderCompletionTest extends WebTestCase
         if ($contractorType === 1 && $isPaid === true) {
             $pdo = static::getContainer()->get(\PDO::class);
             if ($pdo instanceof \PDO) {
-                $stmt = $pdo->prepare('UPDATE orders SET is_paid = :is_paid WHERE unique_order_number = :unique_order_number');
+                $stmt = $pdo->prepare(
+                    'UPDATE orders SET is_paid = :is_paid WHERE unique_order_number = :unique_order_number'
+                );
                 if ($stmt !== false) {
                     $stmt->execute([
                         ':is_paid' => 1,
@@ -228,7 +237,7 @@ final class CheckOrderCompletionTest extends WebTestCase
         if (!is_array($response)) {
             $this->fail('Response is not an array');
         }
-        
+
         // Verify exact structure
         $this->assertCount(2, $response);
         $this->assertArrayHasKey('isPaid', $response);
@@ -238,4 +247,3 @@ final class CheckOrderCompletionTest extends WebTestCase
         $this->assertNotEmpty($response['message']);
     }
 }
-

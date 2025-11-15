@@ -1,48 +1,5 @@
 ## ADDED Requirements
 
-### Requirement: PHP CS Fixer Code Formatting
-The system SHALL provide PHP CS Fixer tool configured for PSR-12 standards to automatically format code and ensure consistent code style across the codebase.
-
-#### Scenario: Run CS Fixer to fix code style
-- **WHEN** a developer runs `make cs-fix`
-- **THEN** CS Fixer automatically fixes all fixable code style issues in `src/` and `tests/` directories
-- **AND** CS Fixer runs inside the Docker PHP container
-- **AND** the command modifies files in place to fix style violations
-- **AND** the command outputs a summary of files fixed or confirms no fixes needed
-
-#### Scenario: Run CS Fixer to check code style
-- **WHEN** a developer runs `make cs-check`
-- **THEN** CS Fixer checks all PHP files in `src/` and `tests/` directories for style violations
-- **AND** CS Fixer runs inside the Docker PHP container
-- **AND** the command uses `--dry-run` flag to check without modifying files
-- **AND** the command outputs all detected style violations or confirms no violations found
-- **AND** the exit code is non-zero if violations are found, zero if no violations
-
-#### Scenario: CS Fixer detects style violations
-- **WHEN** CS Fixer analyzes code with style violations
-- **THEN** CS Fixer reports specific file locations and violation descriptions
-- **AND** the exit code is non-zero to indicate violations found
-- **AND** developers can use the output to fix the issues manually or run `make cs-fix` to auto-fix
-
-#### Scenario: CS Fixer passes with no violations
-- **WHEN** CS Fixer analyzes code with no style violations
-- **THEN** CS Fixer reports success
-- **AND** the exit code is zero
-- **AND** the command completes successfully
-
-### Requirement: PHP CS Fixer Configuration
-The system SHALL provide a PHP CS Fixer configuration file that defines PSR-12 formatting rules, paths, and formatting options.
-
-#### Scenario: CS Fixer configuration exists
-- **WHEN** CS Fixer is executed
-- **THEN** it reads configuration from `.php-cs-fixer.php` or `.php-cs-fixer.dist.php`
-- **AND** the configuration uses PSR-12 ruleset
-- **AND** the configuration includes `src/` and `tests/` directories for analysis
-- **AND** the configuration enforces 4 spaces for indentation
-- **AND** the configuration enforces strict types declaration (`declare(strict_types=1);`)
-- **AND** the configuration sets line length limit to 120 characters
-- **AND** the configuration aligns with PSR-12 Extended Coding Style Guide
-
 ### Requirement: phpcbf Code Formatting
 The system SHALL provide phpcbf (PHP Code Beautifier and Fixer) tool configured for PSR-12 standards to automatically fix code style issues.
 
@@ -98,21 +55,7 @@ The system SHALL provide a PHP CodeSniffer configuration file that defines codin
 - **AND** the configuration aligns with PSR-12 Extended Coding Style Guide
 
 ### Requirement: Makefile Integration for Code Style Tools
-The system SHALL provide Makefile targets to run PHP CS Fixer, phpcbf, and phpcs.
-
-#### Scenario: Execute CS Fixer via Makefile
-- **WHEN** a developer runs `make cs-fix`
-- **THEN** CS Fixer executes inside the Docker PHP container with `--fix` flag
-- **AND** the command uses `docker-compose exec -T php` to run in non-interactive mode
-- **AND** the output is displayed in the terminal
-- **AND** files are modified in place to fix style violations
-
-#### Scenario: Execute CS Fixer check via Makefile
-- **WHEN** a developer runs `make cs-check`
-- **THEN** CS Fixer executes inside the Docker PHP container with `--dry-run` flag
-- **AND** the command uses `docker-compose exec -T php` to run in non-interactive mode
-- **AND** the output is displayed in the terminal
-- **AND** the command exits with appropriate code (0 for no violations, non-zero for violations)
+The system SHALL provide Makefile targets to run phpcbf and phpcs.
 
 #### Scenario: Execute phpcbf via Makefile
 - **WHEN** a developer runs `make phpcbf`
@@ -129,20 +72,7 @@ The system SHALL provide Makefile targets to run PHP CS Fixer, phpcbf, and phpcs
 - **AND** the command exits with appropriate code (0 for success, non-zero for violations)
 
 ### Requirement: Pre-commit Hook Validation with Code Style Tools
-The system SHALL run PHP CS Fixer check and phpcs (CodeSniffer checker) analysis automatically before allowing code commits.
-
-#### Scenario: Pre-commit hook runs CS Fixer check
-- **WHEN** a developer attempts to commit code
-- **THEN** the pre-commit hook executes CS Fixer check (dry-run mode)
-- **AND** CS Fixer runs inside the Docker PHP container
-- **AND** the hook waits for CS Fixer to complete before proceeding
-
-#### Scenario: Pre-commit hook blocks commit on CS Fixer failure
-- **WHEN** CS Fixer detects style violations during pre-commit hook execution
-- **THEN** the commit is blocked
-- **AND** an error message is displayed indicating CS Fixer violations
-- **AND** the developer must fix the style issues before committing (by running `make cs-fix` or manually)
-- **AND** the exit code prevents the commit from proceeding
+The system SHALL run phpcs (CodeSniffer checker) analysis automatically before allowing code commits.
 
 #### Scenario: Pre-commit hook runs phpcs
 - **WHEN** a developer attempts to commit code
@@ -158,7 +88,7 @@ The system SHALL run PHP CS Fixer check and phpcs (CodeSniffer checker) analysis
 - **AND** the exit code prevents the commit from proceeding
 
 #### Scenario: Pre-commit hook allows commit on code style success
-- **WHEN** CS Fixer check and phpcs pass with no violations during pre-commit hook execution
+- **WHEN** phpcs passes with no violations during pre-commit hook execution
 - **THEN** the commit proceeds to next validation steps
 - **AND** other pre-commit hook tasks (like PHPStan, deptrack, tests, and OpenAPI generation) continue to execute
 - **AND** the commit completes successfully if all checks pass
@@ -190,12 +120,11 @@ The system SHALL run all tests automatically before allowing code commits to ens
 
 ### Requirement: Pre-commit Hook Validation
 The system SHALL run code quality and style validation automatically before allowing code commits, in the following order:
-1. CS Fixer check (code style formatting validation)
-2. phpcs (CodeSniffer checker - code style validation)
-3. PHPStan analysis (static analysis)
-4. Deptrack analysis (dependency tracking)
-5. Test execution (all tests)
-6. OpenAPI generation (documentation)
+1. phpcs (CodeSniffer checker - code style validation)
+2. PHPStan analysis (static analysis)
+3. Deptrack analysis (dependency tracking)
+4. Test execution (all tests)
+5. OpenAPI generation (documentation)
 
 #### Scenario: Pre-commit hook runs all validations in order
 - **WHEN** a developer attempts to commit code
@@ -205,7 +134,7 @@ The system SHALL run code quality and style validation automatically before allo
 - **AND** if any validation fails, subsequent validations are skipped and the commit is blocked
 
 #### Scenario: Pre-commit hook blocks commit on any validation failure
-- **WHEN** any validation (CS Fixer, phpcs, PHPStan, deptrack, or tests) fails during pre-commit hook execution
+- **WHEN** any validation (phpcs, PHPStan, deptrack, or tests) fails during pre-commit hook execution
 - **THEN** the commit is blocked
 - **AND** an error message is displayed indicating which validation failed
 - **AND** the developer must fix the issues before committing

@@ -33,12 +33,12 @@ final class CreateOrderRequestTest extends TestCase
         $this->assertEquals(3000, $command->sum);
         $this->assertEquals(1, $command->contractorType);
         $this->assertCount(2, $command->items);
-        
+
         $this->assertInstanceOf(CreateOrderItemDTO::class, $command->items[0]);
         $this->assertEquals(1, $command->items[0]->productId);
         $this->assertEquals(1000, $command->items[0]->price);
         $this->assertEquals(2, $command->items[0]->quantity);
-        
+
         $this->assertInstanceOf(CreateOrderItemDTO::class, $command->items[1]);
         $this->assertEquals(2, $command->items[1]->productId);
         $this->assertEquals(2000, $command->items[1]->price);
@@ -87,4 +87,3 @@ final class CreateOrderRequestTest extends TestCase
         $this->assertCount(0, $command->items);
     }
 }
-

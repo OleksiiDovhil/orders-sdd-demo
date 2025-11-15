@@ -53,4 +53,3 @@ final class MockPaymentStatusServiceTest extends TestCase
         $this->assertContains(false, $results, 'Should return false at least once');
     }
 }
-

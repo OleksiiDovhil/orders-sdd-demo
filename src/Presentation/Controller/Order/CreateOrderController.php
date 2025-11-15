@@ -28,7 +28,9 @@ final class CreateOrderController extends AbstractController
     #[OA\Post(
         path: '/api/orders',
         summary: 'Create a new order',
-        description: 'Creates a new order with the provided items. The system generates a unique order number in the format {year}-{month}-{sequentialOrderNumber} and returns a redirect URL based on the contractor type.',
+        description: 'Creates a new order with the provided items. The system generates a unique order number '
+            . 'in the format {year}-{month}-{sequentialOrderNumber} and returns a redirect URL '
+            . 'based on the contractor type.',
         tags: ['Orders'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -99,7 +101,8 @@ final class CreateOrderController extends AbstractController
                         new OA\Property(
                             property: 'redirectUrl',
                             type: 'string',
-                            description: 'Redirect URL for payment. For individuals: /pay/{uniqueOrderNumber}, for legal entities: /orders/{uniqueOrderNumber}/bill',
+                            description: 'Redirect URL for payment. For individuals: /pay/{uniqueOrderNumber}, '
+                                . 'for legal entities: /orders/{uniqueOrderNumber}/bill',
                             example: 'http://some-pay-agregator.com/pay/2025-11-1'
                         ),
                     ]
@@ -158,4 +161,3 @@ final class CreateOrderController extends AbstractController
         );
     }
 }
-

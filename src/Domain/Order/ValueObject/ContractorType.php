@@ -29,4 +29,3 @@ enum ContractorType: int
         return self::from($value);
     }
 }
-

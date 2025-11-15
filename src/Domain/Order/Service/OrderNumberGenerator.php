@@ -38,4 +38,3 @@ final class OrderNumberGenerator
         return sprintf('%s-%s-%d', $year, $month, $orderNumber);
     }
 }
-

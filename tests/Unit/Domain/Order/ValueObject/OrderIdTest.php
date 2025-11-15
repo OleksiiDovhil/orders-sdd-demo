@@ -48,4 +48,3 @@ final class OrderIdTest extends TestCase
         $this->assertFalse($orderId1->equals($orderId2));
     }
 }
-

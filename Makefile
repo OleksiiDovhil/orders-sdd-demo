@@ -1,4 +1,4 @@
-.PHONY: build up down exec logs clean test test-unit test-feature test-coverage test-verbose test-file test-filter phpstan deptrack
+.PHONY: build up down exec logs clean test test-coverage test-verbose test-file test-filter phpstan phpstan-src deptrack phpcbf phpcbf-src phpcs phpcs-src
 
 # Build Docker containers
 build:
@@ -29,13 +29,6 @@ clean:
 test:
 	docker-compose exec -T php vendor/bin/phpunit tests/
 
-# Run unit tests only
-test-unit:
-	docker-compose exec -T php vendor/bin/phpunit tests/Unit
-
-# Run feature tests only
-test-feature:
-	docker-compose exec -T php vendor/bin/phpunit tests/Feature
 
 # Run tests with coverage report
 test-coverage:
@@ -65,11 +58,77 @@ test-filter:
 	fi
 	docker-compose exec -T php vendor/bin/phpunit tests/ --filter $(FILTER)
 
-# Run PHPStan static analysis
+# Run PHPStan static analysis (all code including tests)
 phpstan:
 	docker-compose exec -T php php -d memory_limit=512M vendor/bin/phpstan analyse
+
+# Run PHPStan static analysis for src folder only
+phpstan-src:
+	docker-compose exec -T php php -d memory_limit=512M vendor/bin/phpstan analyse src/
 
 # Run deptrack dependency analysis
 deptrack:
 	docker-compose exec -T php php -d error_reporting="E_ALL & ~E_DEPRECATED" vendor/bin/deptrac analyse --config-file=deptrac.yaml
+
+# Run phpcbf (PHP Code Beautifier and Fixer) to automatically fix code style issues (all code including tests)
+# Note: phpcbf cannot fix line length violations automatically - they must be fixed manually
+phpcbf:
+	docker-compose exec -T php vendor/bin/phpcbf --standard=phpcs.xml src/ tests/ || \
+	(EXIT_CODE=$$?; \
+	if [ $$EXIT_CODE -eq 1 ]; then \
+		echo "❌ phpcbf found errors that could not be fixed automatically"; \
+		exit 1; \
+	elif [ $$EXIT_CODE -eq 2 ]; then \
+		echo "⚠ phpcbf completed but some violations remain (e.g., line length)"; \
+		echo "   Line length violations must be fixed manually"; \
+		echo "   Run 'make phpcs' to see remaining violations"; \
+		exit 1; \
+	else \
+		exit $$EXIT_CODE; \
+	fi)
+
+# Run phpcbf (PHP Code Beautifier and Fixer) for src folder only
+# Note: phpcbf cannot fix line length violations automatically - they must be fixed manually
+phpcbf-src:
+	docker-compose exec -T php vendor/bin/phpcbf --standard=phpcs.xml src/ || \
+	(EXIT_CODE=$$?; \
+	if [ $$EXIT_CODE -eq 1 ]; then \
+		echo "❌ phpcbf found errors that could not be fixed automatically"; \
+		exit 1; \
+	elif [ $$EXIT_CODE -eq 2 ]; then \
+		echo "⚠ phpcbf completed but some violations remain (e.g., line length)"; \
+		echo "   Line length violations must be fixed manually"; \
+		echo "   Run 'make phpcs-src' to see remaining violations"; \
+		exit 1; \
+	else \
+		exit $$EXIT_CODE; \
+	fi)
+
+# Run phpcs (PHP CodeSniffer checker) to validate code style (all code including tests)
+# Exit code 2 means warnings (e.g., line length) - we treat this as failure to enforce standards
+phpcs:
+	docker-compose exec -T php vendor/bin/phpcs --standard=phpcs.xml src/ tests/ || \
+	(EXIT_CODE=$$?; \
+	if [ $$EXIT_CODE -eq 1 ] || [ $$EXIT_CODE -eq 2 ]; then \
+		echo "❌ CodeSniffer found violations (errors or warnings)"; \
+		echo "   Run 'make phpcbf' to auto-fix some issues"; \
+		echo "   Note: Line length violations must be fixed manually"; \
+		exit 1; \
+	else \
+		exit $$EXIT_CODE; \
+	fi)
+
+# Run phpcs (PHP CodeSniffer checker) for src folder only
+# Exit code 2 means warnings (e.g., line length) - we treat this as failure to enforce standards
+phpcs-src:
+	docker-compose exec -T php vendor/bin/phpcs --standard=phpcs.xml src/ || \
+	(EXIT_CODE=$$?; \
+	if [ $$EXIT_CODE -eq 1 ] || [ $$EXIT_CODE -eq 2 ]; then \
+		echo "❌ CodeSniffer found violations (errors or warnings)"; \
+		echo "   Run 'make phpcbf-src' to auto-fix some issues"; \
+		echo "   Note: Line length violations must be fixed manually"; \
+		exit 1; \
+	else \
+		exit $$EXIT_CODE; \
+	fi)
 

@@ -20,4 +20,3 @@ interface OrderRepositoryInterface
 
     public function markAsPaid(OrderId $orderId): void;
 }
-

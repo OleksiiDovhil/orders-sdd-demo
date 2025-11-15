@@ -31,4 +31,3 @@ final readonly class UniqueOrderNumber
         return $this->value === $other->value;
     }
 }
-

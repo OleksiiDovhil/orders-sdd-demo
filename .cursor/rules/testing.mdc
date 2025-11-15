@@ -453,12 +453,6 @@ public static function invalidEmailProvider(): array
 # Run all tests
 make test
 
-# Run unit tests only
-make test-unit
-
-# Run feature tests only
-make test-feature
-
 # Run tests with coverage
 make test-coverage
 
@@ -477,10 +471,6 @@ make test-filter FILTER=CreateOrderRequest
 # Run all tests (inside Docker container)
 docker-compose exec -T php vendor/bin/phpunit tests/
 
-# Run specific test suite
-docker-compose exec -T php vendor/bin/phpunit tests/Unit
-docker-compose exec -T php vendor/bin/phpunit tests/Feature
-
 # Run specific test file
 docker-compose exec -T php vendor/bin/phpunit tests/Feature/Order/CreateOrderTest.php
 
@@ -492,10 +482,14 @@ docker-compose exec -T php vendor/bin/phpunit --coverage-html coverage/
 ```
 
 ### Test Execution Workflow
-1. **After making code changes** → Run `make test`
-2. **If tests fail** → Fix the issues immediately
-3. **Re-run tests** → Verify all tests pass
-4. **Only then** → Consider the work complete
+Follow the standard "Test Execution and Validation" workflow:
+1. **Run PHPStan for src folder** → `make phpstan-src` and fix any issues
+2. **Run CodeSniffer for src folder** → `make phpcbf-src` then `make phpcs-src` and fix any remaining issues
+3. **Run deptrac** → `make deptrack` and fix any architectural violations
+4. **Run all tests** → `make test` and fix any failing tests
+5. **Run PHPStan globally** → `make phpstan` and fix any issues
+6. **Run CodeSniffer globally** → `make phpcbf` then `make phpcs` and fix any remaining issues
+7. **Verify test coverage** → Ensure coverage is maintained after code changes
 
 ## Testing Requirements
 
@@ -511,7 +505,8 @@ docker-compose exec -T php vendor/bin/phpunit --coverage-html coverage/
 - **Validation scenarios**: All constraints must be tested
 
 ### Test Execution Requirements
-- **CRITICAL: Always run tests after code changes** - Use `make test` command
+- **CRITICAL: Follow the standard Test Execution and Validation workflow** - See workflow above
 - **All tests MUST pass** - Fix any failures before considering work complete
 - **Never commit code with failing tests** - Tests are a gate for code quality
 - **Run tests before finalizing any implementation** - Catch issues early
+- **Use `make test` to run all tests** - Do not use separate unit/feature test commands

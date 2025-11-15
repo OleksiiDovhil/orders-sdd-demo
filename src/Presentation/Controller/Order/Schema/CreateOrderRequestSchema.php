@@ -44,4 +44,3 @@ final class CreateOrderRequestSchema
     )]
     public array $items;
 }
-

@@ -257,4 +257,3 @@ final class CheckOrderCompletionHandlerTest extends TestCase
         $this->handler->handle($query);
     }
 }
-

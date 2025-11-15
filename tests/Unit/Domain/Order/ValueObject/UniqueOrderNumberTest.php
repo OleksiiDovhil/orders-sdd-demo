@@ -48,4 +48,3 @@ final class UniqueOrderNumberTest extends TestCase
         $this->assertTrue($uniqueOrderNumber1->equals($uniqueOrderNumber2));
     }
 }
-

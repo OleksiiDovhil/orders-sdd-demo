@@ -34,7 +34,7 @@ final class CheckOrderCompletionHandler
         // If not paid, check with payment service
         if (!$isPaid) {
             $servicePaidStatus = $this->paymentStatusService->checkPaymentStatus($order);
-            
+
             // If service confirms payment, mark the order as paid and save
             if ($servicePaidStatus) {
                 $order->markAsPaid();
@@ -50,4 +50,3 @@ final class CheckOrderCompletionHandler
         return new CheckOrderCompletionResponseDTO($isPaid, $message);
     }
 }
-

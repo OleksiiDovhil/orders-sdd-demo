@@ -26,4 +26,3 @@ final class RedirectUrlGenerator
         return sprintf('%s/orders/%s/bill', $baseUrl, $orderNumber);
     }
 }
-

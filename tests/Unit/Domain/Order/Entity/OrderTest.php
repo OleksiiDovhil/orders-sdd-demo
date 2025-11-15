@@ -70,4 +70,3 @@ final class OrderTest extends TestCase
         );
     }
 }
-

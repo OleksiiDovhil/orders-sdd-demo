@@ -146,8 +146,15 @@ final class CreateOrderTest extends WebTestCase
             $this->fail('Response is not an array');
         }
         $this->assertArrayHasKey('errors', $response);
-        if (is_array($response['errors']) && isset($response['errors']['contractorType']) && is_string($response['errors']['contractorType'])) {
-            $this->assertStringContainsString('must be 1 (individual) or 2 (legal entity)', $response['errors']['contractorType']);
+        if (
+            is_array($response['errors'])
+            && isset($response['errors']['contractorType'])
+            && is_string($response['errors']['contractorType'])
+        ) {
+            $this->assertStringContainsString(
+                'must be 1 (individual) or 2 (legal entity)',
+                $response['errors']['contractorType']
+            );
         }
     }
 
@@ -226,7 +233,11 @@ final class CreateOrderTest extends WebTestCase
             $this->fail('Response is not an array');
         }
         $this->assertArrayHasKey('errors', $response);
-        if (is_array($response['errors']) && isset($response['errors']['sum']) && is_string($response['errors']['sum'])) {
+        if (
+            is_array($response['errors'])
+            && isset($response['errors']['sum'])
+            && is_string($response['errors']['sum'])
+        ) {
             $this->assertStringContainsString('non-negative', $response['errors']['sum']);
         }
     }
@@ -263,7 +274,11 @@ final class CreateOrderTest extends WebTestCase
             $this->fail('Response is not an array');
         }
         $this->assertArrayHasKey('errors', $response);
-        if (is_array($response['errors']) && isset($response['errors']['items']) && is_string($response['errors']['items'])) {
+        if (
+            is_array($response['errors'])
+            && isset($response['errors']['items'])
+            && is_string($response['errors']['items'])
+        ) {
             $this->assertStringContainsString('At least one item is required', $response['errors']['items']);
         }
     }
@@ -473,6 +488,4 @@ final class CreateOrderTest extends WebTestCase
             $this->assertStringContainsString('Invalid JSON', $response['error']);
         }
     }
-
 }
-

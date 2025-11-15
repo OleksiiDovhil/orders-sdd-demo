@@ -49,4 +49,3 @@ final class ContractorTypeTest extends TestCase
         ContractorType::fromInt(99);
     }
 }
-

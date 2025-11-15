@@ -16,4 +16,3 @@ final class MockPaymentStatusService implements PaymentStatusServiceInterface
         return (bool) random_int(0, 1);
     }
 }
-

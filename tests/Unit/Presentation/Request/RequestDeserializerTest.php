@@ -67,4 +67,3 @@ final class RequestDeserializerTest extends TestCase
         $this->deserializer->deserializeAndValidate($request, CheckOrderCompletionRequest::class);
     }
 }
-

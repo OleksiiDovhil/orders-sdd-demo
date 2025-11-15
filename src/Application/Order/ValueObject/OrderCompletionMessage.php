@@ -14,4 +14,3 @@ enum OrderCompletionMessage: string
         return $this->value;
     }
 }
-

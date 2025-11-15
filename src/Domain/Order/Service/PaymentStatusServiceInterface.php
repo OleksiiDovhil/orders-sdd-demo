@@ -10,4 +10,3 @@ interface PaymentStatusServiceInterface
 {
     public function checkPaymentStatus(Order $order): bool;
 }
-

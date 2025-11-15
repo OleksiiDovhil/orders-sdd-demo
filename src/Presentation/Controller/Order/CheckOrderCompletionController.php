@@ -24,7 +24,8 @@ final class CheckOrderCompletionController extends AbstractController
     #[OA\Get(
         path: '/api/orders/{uniqueOrderNumber}/complete',
         summary: 'Check order payment completion status',
-        description: 'Checks whether an order has been paid. For individual contractors, the payment status is stored in the database. For legal entities, the payment status is checked via a payment microservice.',
+        description: 'Checks whether an order has been paid. For individual contractors, the payment status is stored '
+            . 'in the database. For legal entities, the payment status is checked via a payment microservice.',
         tags: ['Orders'],
         parameters: [
             new OA\Parameter(
@@ -126,4 +127,3 @@ final class CheckOrderCompletionController extends AbstractController
         );
     }
 }
-

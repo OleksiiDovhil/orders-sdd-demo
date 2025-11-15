@@ -25,4 +25,3 @@ final readonly class CheckOrderCompletionRequest
         return new CheckOrderCompletionQuery($this->uniqueOrderNumber);
     }
 }
-

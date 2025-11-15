@@ -37,4 +37,3 @@ final class CreateOrderItemRequestTest extends TestCase
         $this->assertEquals(0, $item->price);
     }
 }
-

@@ -82,15 +82,25 @@ final class RequestDeserializer
                     continue;
                 }
                 $items[] = new CreateOrderItemRequest(
-                    isset($itemData['productId']) && is_numeric($itemData['productId']) ? (int) $itemData['productId'] : 0,
-                    isset($itemData['price']) && is_numeric($itemData['price']) ? (int) $itemData['price'] : 0,
-                    isset($itemData['quantity']) && is_numeric($itemData['quantity']) ? (int) $itemData['quantity'] : 0
+                    isset($itemData['productId']) && is_numeric($itemData['productId'])
+                        ? (int) $itemData['productId']
+                        : 0,
+                    isset($itemData['price']) && is_numeric($itemData['price'])
+                        ? (int) $itemData['price']
+                        : 0,
+                    isset($itemData['quantity']) && is_numeric($itemData['quantity'])
+                        ? (int) $itemData['quantity']
+                        : 0
                 );
             }
         }
 
-        $sum = isset($data['sum']) && is_numeric($data['sum']) ? (int) $data['sum'] : 0;
-        $contractorType = isset($data['contractorType']) && is_numeric($data['contractorType']) ? (int) $data['contractorType'] : 0;
+        $sum = isset($data['sum']) && is_numeric($data['sum'])
+            ? (int) $data['sum']
+            : 0;
+        $contractorType = isset($data['contractorType']) && is_numeric($data['contractorType'])
+            ? (int) $data['contractorType']
+            : 0;
         $request = new CreateOrderRequest(
             $sum,
             $contractorType,
@@ -127,4 +137,3 @@ final class RequestDeserializer
         return $requestObject;
     }
 }
-

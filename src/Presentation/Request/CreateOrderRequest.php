@@ -18,12 +18,10 @@ final readonly class CreateOrderRequest
         #[Assert\Type(type: 'integer', message: 'Sum must be an integer')]
         #[Assert\GreaterThanOrEqual(value: 0, message: 'Sum must be non-negative')]
         public int $sum,
-
         #[Assert\NotBlank(message: 'Contractor type is required')]
         #[Assert\Type(type: 'integer', message: 'Contractor type must be an integer')]
         #[Assert\Choice(choices: [1, 2], message: 'Contractor type must be 1 (individual) or 2 (legal entity)')]
         public int $contractorType,
-
         #[Assert\NotBlank(message: 'Items are required')]
         #[Assert\Type(type: 'array', message: 'Items must be an array')]
         #[Assert\Count(min: 1, minMessage: 'At least one item is required')]
@@ -52,4 +50,3 @@ final readonly class CreateOrderRequest
         );
     }
 }
-

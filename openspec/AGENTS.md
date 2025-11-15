@@ -81,7 +81,7 @@ After deployment, create separate PR to:
 
 **When Creating tasks.md:**
 - **MANDATORY**: Always include a "Test Execution and Validation" section
-- This section must include tasks to run unit tests, feature tests, and all tests
+- This section must include tasks to run all tests using `make test`
 - Include tasks to fix any failing tests after code changes
 - Test execution is a gate - all tests must pass before work is considered complete
 
@@ -222,11 +222,16 @@ If multiple capabilities are affected, create multiple delta files under `change
 - [ ] 1.6 Replace string literals with Enums/constants (messages, status values) - convert to strings only in presentation layer
 
 ## X. Test Execution and Validation
-- [ ] X.1 Run all unit tests: `make test-unit` and verify they pass
-- [ ] X.2 Run all feature tests: `make test-feature` and verify they pass
-- [ ] X.3 Run all tests: `make test` and verify all tests pass with exit code 0
-- [ ] X.4 Fix any failing tests that may have been broken by code changes
-- [ ] X.5 Verify test coverage is maintained after code changes
+- [ ] X.1 Run PHPStan for src folder: `make phpstan-src` and fix any issues found
+- [ ] X.2 Run CodeSniffer for src folder: `make phpcbf-src` to auto-fix issues, then `make phpcs-src` to verify
+- [ ] X.3 Fix any remaining CodeSniffer violations in src folder that phpcbf could not auto-fix
+- [ ] X.4 Run deptrac: `make deptrack` and fix any architectural violations found
+- [ ] X.5 Run all tests: `make test` and verify all tests pass with exit code 0
+- [ ] X.6 Fix any failing tests that may have been broken by code changes
+- [ ] X.7 Run PHPStan globally (with tests folder): `make phpstan` and fix any issues found
+- [ ] X.8 Run CodeSniffer globally (with tests folder): `make phpcbf` to auto-fix issues, then `make phpcs` to verify
+- [ ] X.9 Fix any remaining CodeSniffer violations that phpcbf could not auto-fix
+- [ ] X.10 Verify test coverage is maintained after code changes
 ```
 
 **CRITICAL**: Every `tasks.md` MUST include a "Test Execution and Validation" section with explicit tasks to run tests after code changes. This is mandatory regardless of whether new tests are written or only existing code is modified.
@@ -473,7 +478,7 @@ notifications/spec.md
 - **MANDATORY: Feature tests for success cases** - Test happy path with valid data
 - **MANDATORY: Run all tests after code changes** - Use `make test` command
 - **MANDATORY: Fix failing tests before completion** - Never leave tests in a failing state
-- **MANDATORY: Include test execution tasks in tasks.md** - Every proposal MUST have a "Test Execution and Validation" section with explicit tasks to run tests
+- **MANDATORY: Include test execution tasks in tasks.md** - Every proposal MUST have a "Test Execution and Validation" section with explicit tasks following the standard workflow (phpstan-src, codesniffer-src, deptrack, test, phpstan, codesniffer)
 - Test missing required fields, invalid types, invalid values, invalid JSON format
 - Verify specific error messages in validation tests
 - Request DTOs must have 100% test coverage
