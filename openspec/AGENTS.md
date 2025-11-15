@@ -233,16 +233,12 @@ If multiple capabilities are affected, create multiple delta files under `change
 - [ ] X.7 Run PHPStan globally (with tests folder): `make phpstan` and fix any issues found
 - [ ] X.8 Run CodeSniffer globally (with tests folder): `make phpcbf` to auto-fix issues, then `make phpcs` to verify
 - [ ] X.9 Fix any remaining CodeSniffer violations that phpcbf could not auto-fix
-- [ ] X.10 Run automated coverage fix workflow: `make test-coverage-auto-fix` (or manually follow steps X.11-X.14)
-- [ ] X.11 Run tests with coverage: `make test-coverage` to generate coverage report
-- [ ] X.12 Run coverage check: `make test-coverage-check` to compare current coverage with `coverage_percent` file
-- [ ] X.13 If coverage check failed (coverage decreased): 
-  - Run `make test-coverage-auto-fix` to get prioritized list of uncovered code
-  - The tool will prioritize recently created/edited files (from git diff) as HIGHEST PRIORITY
-  - Start adding tests for classes in priority order (highest priority first)
-  - After each test addition, run `make test-coverage-check` to verify improvement
-  - Continue until coverage check passes
-- [ ] X.14 Verify test coverage is maintained or improved after code changes
+- [ ] X.10 Run tests with coverage: `make test-coverage` to generate coverage report (XML, HTML, and text formats)
+- [ ] X.11 Analyze coverage report coverage.txt (then clover.xml if not 100% for all classes) to identify all uncovered lines in `src/` directory
+- [ ] X.12 Add tests to cover all uncovered lines (only modify test files in `tests/` directory, not `src/`)
+- [ ] X.13 If unreachable dead code is found that prevents 100% coverage, remove it from `src/` (this is the only exception to modifying `src/`)
+- [ ] X.14 Run `make test-coverage` again and verify coverage is 100% (all classes, methods, and lines covered)
+- [ ] X.15 Run all tests again: `make test` to ensure new tests don't break existing functionality
 ```
 
 **CRITICAL**: Every `tasks.md` MUST include a "Test Execution and Validation" section with explicit tasks to run tests after code changes. This is mandatory regardless of whether new tests are written or only existing code is modified.

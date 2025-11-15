@@ -28,11 +28,6 @@ final class RequestValueResolver implements ValueResolverInterface
             return [];
         }
 
-        // Skip if it's the base Request class
-        if ($type === Request::class) {
-            return [];
-        }
-
         try {
             $requestObject = $this->requestDeserializer->deserializeAndValidate($request, $type);
             yield $requestObject;
