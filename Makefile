@@ -1,4 +1,4 @@
-.PHONY: build up down exec logs clean test test-coverage test-verbose test-file test-filter phpstan phpstan-src deptrack phpcbf phpcbf-src phpcs phpcs-src
+.PHONY: build up down exec logs clean test test-coverage test-coverage-percent test-coverage-save test-coverage-check test-verbose test-file test-filter phpstan phpstan-src deptrack phpcbf phpcbf-src phpcs phpcs-src
 
 # Build Docker containers
 build:
@@ -31,8 +31,33 @@ test:
 
 
 # Run tests with coverage report
+# Note: Requires Xdebug to be installed (rebuild container with 'make build' after Dockerfile changes)
 test-coverage:
-	docker-compose exec -T php vendor/bin/phpunit --coverage-html coverage/ tests/
+	@echo "Checking for Xdebug..."
+	@docker-compose exec -T php php -m | grep -q xdebug || \
+		(echo "❌ Error: Xdebug is not installed. Please rebuild the container:" && \
+		 echo "   make build" && \
+		 echo "   make up" && \
+		 exit 1)
+	docker-compose exec -T php mkdir -p coverage
+	docker-compose exec -T -e XDEBUG_MODE=coverage php vendor/bin/phpunit --coverage-html coverage/ --coverage-clover coverage/clover.xml tests/
+
+# Extract coverage percentage from coverage report
+# Note: Requires coverage report to be generated first with 'make test-coverage'
+test-coverage-percent:
+	@docker-compose exec -T php php scripts/extract-coverage.php coverage/clover.xml
+
+# Run tests with coverage and save percentage to coverage_percent file
+test-coverage-save:
+	$(MAKE) test-coverage
+	@docker-compose exec -T php php scripts/extract-coverage.php coverage/clover.xml > coverage_percent 2>&1 || \
+		(echo "Failed to extract coverage percentage" && exit 1)
+	@echo "Coverage percentage saved to coverage_percent: $$(cat coverage_percent)%"
+
+# Run tests with coverage and check if coverage meets threshold in coverage_percent file
+test-coverage-check:
+	$(MAKE) test-coverage
+	@docker-compose exec -T php php scripts/check-coverage-threshold.php coverage/clover.xml coverage_percent
 
 # Run tests with debug output
 test-verbose:

@@ -13,6 +13,8 @@ services:
       - APP_ENV=${APP_ENV:-dev}
       - APP_SECRET=${APP_SECRET:-ThisTokenIsNotSoSecretChangeIt}
       - DATABASE_URL=${DATABASE_URL:-postgresql://symfony:symfony@postgres:5432/symfony}
+      - XDEBUG_MODE=${XDEBUG_MODE:-off}
+      - XDEBUG_CONFIG=${XDEBUG_CONFIG:-}
     depends_on:
       - postgres
 

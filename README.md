@@ -173,6 +173,11 @@ The project includes a Makefile with convenient commands for Docker operations:
   - Example: `make exec ARGS="composer install"`
 - `make logs` - View container logs (follow mode)
 - `make clean` - Remove containers and volumes (cleanup)
+- `make test` - Run all tests
+- `make test-coverage` - Run tests with coverage report (generates HTML and XML reports in `coverage/` directory)
+- `make test-coverage-percent` - Extract and display coverage percentage from the latest coverage report
+- `make test-coverage-save` - Run tests with coverage and save percentage to `coverage_percent` file
+- `make test-coverage-check` - Run tests with coverage and verify coverage meets threshold in `coverage_percent` file
 
 ## Services
 
@@ -180,8 +185,9 @@ The project includes a Makefile with convenient commands for Docker operations:
 - **Container**: `symfony-php`
 - **Dockerfile**: `docker/php/Dockerfile`
 - **Image**: PHP 8.4-FPM (Debian-based)
-- **Extensions**: pdo_pgsql, pdo_mysql, mbstring, exif, pcntl, bcmath, gd
+- **Extensions**: pdo_pgsql, pdo_mysql, mbstring, exif, pcntl, bcmath, gd, xdebug
 - **Composer**: Pre-installed
+- **Xdebug**: Installed and configured (disabled by default, see Debugging section)
 
 ### Nginx
 - **Container**: `symfony-nginx`
@@ -262,4 +268,124 @@ This will remove:
 - All networks
 
 **Warning**: This will delete your database data. Use with caution.
+
+## Testing and Coverage
+
+### Running Tests
+
+Run all tests:
+```bash
+make test
+```
+
+Run tests with coverage report:
+```bash
+make test-coverage
+```
+
+**Note**: Coverage reports require Xdebug to be installed. If you see "No code coverage driver available", rebuild the container:
+```bash
+make build
+make up
+```
+
+This generates:
+- HTML coverage report in `coverage/` directory (open `coverage/index.html` in a browser)
+- XML coverage report in `coverage/clover.xml` (for CI/CD integration)
+
+Extract coverage percentage (requires coverage report to be generated first):
+```bash
+make test-coverage-percent
+```
+
+**Note**: You must run `make test-coverage` first to generate the coverage report before extracting the percentage.
+
+Run tests with coverage and check if coverage meets the threshold in `coverage_percent` file:
+```bash
+make test-coverage-check
+```
+
+This will:
+1. Run tests with coverage
+2. Compare current coverage with the threshold stored in `coverage_percent` file
+3. Exit with error code if coverage is below the threshold
+
+This is useful for CI/CD pipelines to ensure coverage doesn't decrease.
+
+### Pre-commit Coverage Check
+
+The project includes a pre-commit hook that automatically checks test coverage before each commit:
+
+- **If coverage decreased**: The commit is blocked with an error message showing how much coverage decreased
+- **If coverage increased**: The `coverage_percent` file is automatically updated with the new value and added to the commit
+- **If coverage stayed the same**: The commit proceeds normally
+
+The coverage check runs as part of the pre-commit hook after all other validations (CodeSniffer, PHPStan, Deptrack, and tests) have passed.
+
+**Note**: If the `coverage_percent` file doesn't exist, it will be created automatically with the current coverage percentage on the first commit.
+
+### Test Coverage
+
+Current test coverage: **N/A** (run `make test-coverage` to generate coverage report)
+
+Coverage reports are generated in the `coverage/` directory and are excluded from version control.
+
+## Debugging with Xdebug
+
+Xdebug is installed in the PHP container but **disabled by default** to avoid performance impact.
+
+### Enable Xdebug
+
+To enable Xdebug for debugging, set the `XDEBUG_MODE` environment variable:
+
+1. **Option 1: Set in `.env` file** (recommended for persistent configuration):
+   ```env
+   XDEBUG_MODE=debug,coverage
+   ```
+
+2. **Option 2: Set when starting containers**:
+   ```bash
+   XDEBUG_MODE=debug,coverage docker-compose up -d
+   ```
+
+3. **Option 3: Set for a single command**:
+   ```bash
+   XDEBUG_MODE=debug,coverage make exec ARGS="php bin/console cache:clear"
+   ```
+
+### Xdebug Configuration
+
+- **Client Host**: `host.docker.internal` (for Docker Desktop)
+- **Client Port**: `9003` (Xdebug 3.x default)
+- **IDE Key**: `PHPSTORM`
+
+### IDE Setup (PhpStorm/IntelliJ)
+
+1. Go to **Settings** → **PHP** → **Debug**
+2. Set **Xdebug port** to `9003`
+3. Enable **Can accept external connections**
+4. Go to **Settings** → **PHP** → **Servers**
+5. Add a server:
+   - **Name**: `symfony-local`
+   - **Host**: `localhost`
+   - **Port**: `8080`
+   - **Debugger**: `Xdebug`
+   - **Path mappings**: Map project root to `/var/www/html`
+
+### Testing Xdebug
+
+1. Enable Xdebug: `XDEBUG_MODE=debug make up`
+2. Set a breakpoint in your PHP code
+3. Start listening for debug connections in your IDE
+4. Make a request to your application
+5. The debugger should break at your breakpoint
+
+### Disable Xdebug
+
+To disable Xdebug (for better performance):
+```bash
+XDEBUG_MODE=off make up
+```
+
+Or simply don't set the `XDEBUG_MODE` variable (it's off by default).
 
