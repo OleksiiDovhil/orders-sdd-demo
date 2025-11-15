@@ -302,6 +302,21 @@
     },
     "components": {
         "schemas": {
+            "CheckOrderCompletionRequest": {
+                "description": "Request parameters for checking order completion status",
+                "required": [
+                    "uniqueOrderNumber"
+                ],
+                "properties": {
+                    "uniqueOrderNumber": {
+                        "description": "Unique order number in format YYYY-MM-NNNNN",
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d+$",
+                        "example": "2025-11-12345"
+                    }
+                },
+                "type": "object"
+            },
             "OrderItem": {
                 "description": "An item within an order",
                 "required": [
@@ -357,6 +372,22 @@
                         "items": {
                             "$ref": "#/components/schemas/OrderItem"
                         }
+                    }
+                },
+                "type": "object"
+            },
+            "GetRecentOrdersRequest": {
+                "description": "Request parameters for getting recent orders",
+                "required": [
+                    "limit"
+                ],
+                "properties": {
+                    "limit": {
+                        "description": "Maximum number of orders to return",
+                        "type": "integer",
+                        "maximum": 1000,
+                        "minimum": 1,
+                        "example": 5
                     }
                 },
                 "type": "object"

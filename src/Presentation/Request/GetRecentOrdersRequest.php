@@ -8,6 +8,12 @@ use App\Application\Order\Query\GetRecentOrdersQuery;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Validator\Constraints as Assert;
 
+#[OA\Schema(
+    schema: 'GetRecentOrdersRequest',
+    type: 'object',
+    required: ['limit'],
+    description: 'Request parameters for getting recent orders'
+)]
 final readonly class GetRecentOrdersRequest
 {
     public function __construct(

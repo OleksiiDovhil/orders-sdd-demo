@@ -8,6 +8,12 @@ use App\Application\Order\Query\CheckOrderCompletionQuery;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Validator\Constraints as Assert;
 
+#[OA\Schema(
+    schema: 'CheckOrderCompletionRequest',
+    type: 'object',
+    required: ['uniqueOrderNumber'],
+    description: 'Request parameters for checking order completion status'
+)]
 final readonly class CheckOrderCompletionRequest
 {
     public function __construct(
