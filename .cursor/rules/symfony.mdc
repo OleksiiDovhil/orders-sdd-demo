@@ -12,6 +12,14 @@ globs: ["src/Presentation/**/*.php", "config/**/*.yaml", "src/Infrastructure/**/
 - Controllers should only handle HTTP concerns (request/response)
 - Business logic belongs in Application layer
 
+### Controller Best Practices
+- **Accept Request DTOs as parameters** - Use ValueResolver for automatic deserialization and validation
+- **No manual JSON parsing** - Let ValueResolver handle request transformation
+- **No manual validation** - Validation happens automatically via Symfony Validator
+- **Request DTOs convert to Commands** - Use `createCommand()` or similar methods in request DTOs
+- **Exception listeners handle errors** - Use global exception listeners for consistent error responses
+- **Keep controllers thin** - Only orchestrate HTTP concerns, delegate to handlers
+
 ### Controller Example
 ```php
 <?php
@@ -20,11 +28,10 @@ declare(strict_types=1);
 
 namespace App\Presentation\Controller\User;
 
-use App\Application\User\Command\CreateUserCommand;
 use App\Application\User\Command\CreateUserHandler;
+use App\Presentation\Request\CreateUserRequest;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -36,14 +43,10 @@ final class CreateUserController extends AbstractController
     }
 
     #[Route('/api/users', name: 'api_users_create', methods: ['POST'])]
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(CreateUserRequest $request): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-        
-        $command = new CreateUserCommand(
-            $data['email'] ?? '',
-            $data['name'] ?? ''
-        );
+        // Request is automatically deserialized and validated by ValueResolver
+        $command = $request->createCommand();
         
         $user = $this->handler->handle($command);
         
@@ -54,6 +57,40 @@ final class CreateUserController extends AbstractController
                 'name' => $user->getName(),
             ],
             Response::HTTP_CREATED
+        );
+    }
+}
+```
+
+### Request DTO Example
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Presentation\Request;
+
+use App\Application\User\Command\CreateUserCommand;
+use Symfony\Component\Validator\Constraints as Assert;
+
+final readonly class CreateUserRequest
+{
+    public function __construct(
+        #[Assert\NotBlank(message: 'Email is required')]
+        #[Assert\Email(message: 'Email must be valid')]
+        public string $email,
+
+        #[Assert\NotBlank(message: 'Name is required')]
+        #[Assert\Length(min: 2, max: 100, minMessage: 'Name must be at least 2 characters')]
+        public string $name
+    ) {
+    }
+
+    public function createCommand(): CreateUserCommand
+    {
+        return new CreateUserCommand(
+            $this->email,
+            $this->name
         );
     }
 }
@@ -211,26 +248,57 @@ final class UserCreatedListener
 }
 ```
 
-## Validation
+## Request DTOs and Validation
 
-### Request Validation
-- Validate at the boundary (controllers, form types)
-- Use Symfony Validator component
-- Create custom constraints for domain validation
+### Request DTO Location
+- Create request DTOs in `src/Presentation/Request/`
+- Use `readonly` classes with constructor properties
+- Use Symfony Validation attributes for declarative validation
+
+### Request DTO Requirements
+- **Must have `createCommand()` method** - Convert request DTO to application command
+- **Use Validation attributes** - `#[Assert\NotBlank]`, `#[Assert\Type]`, `#[Assert\Choice]`, etc.
+- **Type safety** - Use proper type hints for all properties
+- **Immutable** - Use `readonly` class to prevent modification
+
+### Automatic Request Injection
+- Use `RequestValueResolver` for automatic deserialization and validation
+- Register in `config/services.yaml` with `controller.argument_value_resolver` tag
+- Request DTOs are automatically injected as controller parameters
+- Validation happens before controller is called
 
 ### Validation Example
 ```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Presentation\Request;
+
+use App\Application\Order\Command\CreateOrderCommand;
 use Symfony\Component\Validator\Constraints as Assert;
 
-final class CreateUserRequest
+final readonly class CreateOrderRequest
 {
-    #[Assert\NotBlank]
-    #[Assert\Email]
-    public string $email;
+    public function __construct(
+        #[Assert\NotBlank(message: 'Sum is required')]
+        #[Assert\Type(type: 'integer', message: 'Sum must be an integer')]
+        #[Assert\GreaterThanOrEqual(value: 0, message: 'Sum must be non-negative')]
+        public int $sum,
 
-    #[Assert\NotBlank]
-    #[Assert\Length(min: 2, max: 100)]
-    public string $name;
+        #[Assert\NotBlank(message: 'Contractor type is required')]
+        #[Assert\Choice(choices: [1, 2], message: 'Contractor type must be 1 or 2')]
+        public int $contractorType
+    ) {
+    }
+
+    public function createCommand(): CreateOrderCommand
+    {
+        return new CreateOrderCommand(
+            $this->sum,
+            $this->contractorType
+        );
+    }
 }
 ```
 
@@ -240,6 +308,8 @@ final class CreateUserRequest
 - Use custom domain exceptions
 - Create exception listeners for global error handling
 - Return appropriate HTTP status codes
+- **Always handle ValidationFailedException** - Convert to structured error responses
+- **Handle InvalidArgumentException** - Convert domain validation errors to HTTP responses
 
 ### Exception Listener Example
 ```php
@@ -249,24 +319,41 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Event;
 
-use App\Domain\User\Exception\UserNotFoundException;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
 
-#[AsEventListener(event: KernelEvents::EXCEPTION)]
-final class ExceptionListener
+#[AsEventListener(event: KernelEvents::EXCEPTION, priority: 10)]
+final class ValidationExceptionListener
 {
     public function onKernelException(ExceptionEvent $event): void
     {
         $exception = $event->getThrowable();
-        
-        if ($exception instanceof UserNotFoundException) {
+
+        if ($exception instanceof ValidationFailedException) {
+            $errors = [];
+            foreach ($exception->getViolations() as $violation) {
+                $propertyPath = $violation->getPropertyPath();
+                $errors[$propertyPath] = $violation->getMessage();
+            }
+
             $response = new JsonResponse(
-                ['error' => 'User not found'],
-                404
+                ['errors' => $errors],
+                JsonResponse::HTTP_BAD_REQUEST
             );
+
+            $event->setResponse($response);
+            return;
+        }
+
+        if ($exception instanceof \InvalidArgumentException) {
+            $response = new JsonResponse(
+                ['error' => $exception->getMessage()],
+                JsonResponse::HTTP_BAD_REQUEST
+            );
+
             $event->setResponse($response);
         }
     }
@@ -297,6 +384,33 @@ final class ExceptionListener
 - Avoid N+1 query problems
 - Use eager loading when appropriate
 
+## Development Workflow
+
+### After Code Changes
+1. **Always run tests** - Execute `make test` after any code changes
+2. **Fix failing tests** - Never leave tests in a failing state
+3. **Verify all tests pass** - Only consider work complete when all tests pass
+4. **Tests are a quality gate** - Code with failing tests is incomplete
+
+### Test Commands
+```bash
+# Run all tests (MANDATORY after code changes)
+make test
+
+# Run specific test suites
+make test-unit
+make test-feature
+
+# Run with coverage
+make test-coverage
+
+# Run specific test file
+make test-file FILE=tests/Feature/Order/CreateOrderTest.php
+
+# Run with filter
+make test-filter FILTER=CreateOrderRequest
+```
+
 ## Best Practices Summary
 
 1. **Thin Controllers**: Delegate to application services
@@ -308,3 +422,4 @@ final class ExceptionListener
 7. **Error Handling**: Use custom exceptions and listeners
 8. **Security**: Validate all input, use security component
 9. **Performance**: Cache appropriately, optimize queries
+10. **Testing**: Always run tests after changes, fix failures immediately

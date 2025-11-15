@@ -253,6 +253,46 @@ feat(user): add user creation endpoint
 - Add unit tests for domain logic
 ```
 
+## Code Cleanliness
+
+### Avoid Unused Code
+- **Never create methods, functions, or classes that are not immediately used**
+- Only implement what is required by the current use case
+- Remove unused code immediately if discovered
+- Before adding a new method, verify it will be used in the current implementation
+- Prefer YAGNI (You Aren't Gonna Need It) principle - don't add functionality until it's needed
+
+### Repository Pattern Guidelines
+- **Only add repository methods that are actually needed for the current feature**
+- Don't add "convenience" methods like `findById`, `findByX`, `getNextId` unless they're explicitly required
+- Review repository interfaces before implementation to ensure all methods are used
+- Remove unused repository methods immediately after confirming they're not needed
+- If a method seems useful but isn't used, document why it's needed or remove it
+
+### Controller and Request Requirements
+
+### Request DTOs
+- **MUST be in `src/Presentation/Request/`**
+- **MUST be `readonly` classes** with constructor properties
+- **MUST have Symfony Validation attributes** on all properties
+- **MUST have `createCommand()` method** to convert to application command
+- **MUST NOT contain business logic** - Only data transformation
+
+### Controllers
+- **MUST accept Request DTOs as parameters** (not `Request` object)
+- **MUST NOT parse JSON manually** - Use ValueResolver
+- **MUST NOT validate manually** - Validation is automatic
+- **MUST be thin** - Only orchestrate HTTP concerns
+- **MUST delegate to handlers** - No business logic in controllers
+
+### Testing Requirements
+- **MUST have unit tests for Request DTOs** - Test `createCommand()` methods
+- **MUST have feature tests for all validation scenarios** - Every constraint must be tested
+- **MUST verify error response structure** - Check for `errors` or `error` key
+- **MUST test success and failure cases** - Both happy path and error scenarios
+- **MUST run all tests after code changes** - Use `make test` command and fix any failures
+- **Tests MUST pass before considering work complete** - Never commit code with failing tests
+
 ## Code Review Checklist
 
 1. ✅ Follows DDD structure
@@ -265,3 +305,14 @@ feat(user): add user creation endpoint
 8. ✅ Proper error handling
 9. ✅ Documentation added
 10. ✅ Security considerations addressed
+11. ✅ **No unused methods, functions, or classes**
+12. ✅ **Repository methods are all used in the codebase**
+13. ✅ **Request DTOs have `createCommand()` method**
+14. ✅ **Controllers accept Request DTOs as parameters (not `Request` object)**
+15. ✅ **No manual JSON parsing in controllers**
+16. ✅ **No manual validation in controllers**
+17. ✅ **Unit tests for Request DTOs (especially `createCommand()` methods)**
+18. ✅ **Feature tests for all validation scenarios**
+19. ✅ **Feature tests verify error response structure**
+20. ✅ **All tests pass after code changes (`make test`)**
+21. ✅ **Any test failures are fixed before completion**

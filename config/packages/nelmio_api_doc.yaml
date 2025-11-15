@@ -1,0 +1,16 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Order Management API
+            description: API for creating and managing orders
+            version: 1.0.0
+        servers:
+            - url: http://localhost:8080
+              description: Local development server
+    areas:
+        default:
+            path_patterns:
+                - ^/api
+            with_attribute: true
+    use_validation_groups: false
+

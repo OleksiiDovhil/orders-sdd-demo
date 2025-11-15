@@ -1,0 +1,213 @@
+{
+    "openapi": "3.0.0",
+    "paths": {
+        "/api/orders": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Create a new order",
+                "description": "Creates a new order with the provided items. The system generates a unique order number in the format {year}-{month}-{sequentialOrderNumber} and returns a redirect URL based on the contractor type.",
+                "operationId": "3279ed4ecc60f8fbb749fed066b5d6db",
+                "requestBody": {
+                    "description": "Order creation data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "sum",
+                                    "contractorType",
+                                    "items"
+                                ],
+                                "properties": {
+                                    "sum": {
+                                        "description": "Total order amount in cents",
+                                        "type": "integer",
+                                        "example": 1000
+                                    },
+                                    "contractorType": {
+                                        "description": "Contractor type: 1 = individual, 2 = legal entity",
+                                        "type": "integer",
+                                        "enum": [
+                                            1,
+                                            2
+                                        ],
+                                        "example": 1
+                                    },
+                                    "items": {
+                                        "description": "Array of order items",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "productId",
+                                                "price",
+                                                "quantity"
+                                            ],
+                                            "properties": {
+                                                "productId": {
+                                                    "description": "Product identifier",
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "price": {
+                                                    "description": "Product price in cents",
+                                                    "type": "integer",
+                                                    "example": 1000
+                                                },
+                                                "quantity": {
+                                                    "description": "Product quantity",
+                                                    "type": "integer",
+                                                    "minimum": 1,
+                                                    "example": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Order created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "uniqueOrderNumber": {
+                                            "description": "Unique order number in format {year}-{month}-{sequentialOrderNumber}",
+                                            "type": "string",
+                                            "example": "2025-11-1"
+                                        },
+                                        "redirectUrl": {
+                                            "description": "Redirect URL for payment. For individuals: /pay/{uniqueOrderNumber}, for legal entities: /orders/{uniqueOrderNumber}/bill",
+                                            "type": "string",
+                                            "example": "http://some-pay-agregator.com/pay/2025-11-1"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Missing required fields: sum, contractorType, items"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Internal server error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "CreateOrderRequest": {
+                "description": "Request body for creating a new order",
+                "required": [
+                    "sum",
+                    "contractorType",
+                    "items"
+                ],
+                "properties": {
+                    "sum": {
+                        "description": "Total order amount in cents",
+                        "type": "integer",
+                        "example": 1000
+                    },
+                    "contractorType": {
+                        "description": "Contractor type: 1 = individual, 2 = legal entity",
+                        "type": "integer",
+                        "enum": [
+                            1,
+                            2
+                        ],
+                        "example": 1
+                    },
+                    "items": {
+                        "description": "Array of order items",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OrderItem"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "OrderItem": {
+                "description": "An item within an order",
+                "required": [
+                    "productId",
+                    "price",
+                    "quantity"
+                ],
+                "properties": {
+                    "productId": {
+                        "description": "Product identifier",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "price": {
+                        "description": "Product price in cents",
+                        "type": "integer",
+                        "example": 1000
+                    },
+                    "quantity": {
+                        "description": "Product quantity",
+                        "type": "integer",
+                        "minimum": 1,
+                        "example": 1
+                    }
+                },
+                "type": "object"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Orders",
+            "description": "Order management endpoints"
+        }
+    ],
+    "info": {
+        "title": "Order Management API",
+        "description": "API for creating and managing orders",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8080",
+            "description": "Local development server"
+        }
+    ]
+}

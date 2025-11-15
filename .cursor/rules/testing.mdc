@@ -319,9 +319,95 @@ final class CreateUserEndpointTest extends WebTestCase
         );
         
         $this->assertResponseStatusCodeSame(400);
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('errors', $response);
+        $this->assertArrayHasKey('email', $response['errors']);
     }
 }
 ```
+
+## Request DTO Testing
+
+### Unit Tests for Request DTOs
+**CRITICAL**: Always create unit tests for request DTOs, especially for `createCommand()` methods.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Unit\Presentation\Request;
+
+use App\Application\Order\Command\CreateOrderCommand;
+use App\Presentation\Request\CreateOrderRequest;
+use PHPUnit\Framework\TestCase;
+
+final class CreateOrderRequestTest extends TestCase
+{
+    public function testShouldCreateCommandFromRequest(): void
+    {
+        // Arrange
+        $request = new CreateOrderRequest(
+            sum: 1000,
+            contractorType: 1,
+            items: []
+        );
+
+        // Act
+        $command = $request->createCommand();
+
+        // Assert
+        $this->assertInstanceOf(CreateOrderCommand::class, $command);
+        $this->assertEquals(1000, $command->sum);
+        $this->assertEquals(1, $command->contractorType);
+    }
+}
+```
+
+### Feature Tests for Validation
+**CRITICAL**: Always test all validation scenarios in feature tests.
+
+```php
+public function testShouldReturnBadRequestWhenRequiredFieldsAreMissing(): void
+{
+    $client = static::createClient();
+    $requestData = ['sum' => 1000]; // Missing required fields
+
+    $client->request('POST', '/api/orders', [], [], [
+        'CONTENT_TYPE' => 'application/json',
+    ], json_encode($requestData));
+
+    $this->assertResponseStatusCodeSame(400);
+    $response = json_decode($client->getResponse()->getContent(), true);
+    $this->assertArrayHasKey('errors', $response);
+    $this->assertArrayHasKey('contractorType', $response['errors']);
+}
+
+public function testShouldReturnBadRequestWhenInvalidJsonFormat(): void
+{
+    $client = static::createClient();
+
+    $client->request('POST', '/api/orders', [], [], [
+        'CONTENT_TYPE' => 'application/json',
+    ], '{invalid json}');
+
+    $this->assertResponseStatusCodeSame(400);
+    $response = json_decode($client->getResponse()->getContent(), true);
+    $this->assertArrayHasKey('error', $response);
+    $this->assertStringContainsString('Invalid JSON', $response['error']);
+}
+```
+
+### Validation Test Checklist
+For every controller endpoint, test:
+- ✅ Success case with valid data
+- ✅ Missing required fields
+- ✅ Invalid field types
+- ✅ Invalid field values (negative numbers, empty strings, etc.)
+- ✅ Invalid JSON format
+- ✅ Empty arrays when minimum count required
+- ✅ Verify error response structure (`errors` or `error` key)
+- ✅ Verify specific error messages
 
 ## Test Utilities
 
@@ -362,14 +448,70 @@ public static function invalidEmailProvider(): array
 
 ## Running Tests
 
+### Using Makefile (Recommended)
 ```bash
 # Run all tests
-php bin/phpunit
+make test
+
+# Run unit tests only
+make test-unit
+
+# Run feature tests only
+make test-feature
+
+# Run tests with coverage
+make test-coverage
+
+# Run tests with verbose output
+make test-verbose
+
+# Run specific test file
+make test-file FILE=tests/Feature/Order/CreateOrderTest.php
+
+# Run tests with filter
+make test-filter FILTER=CreateOrderRequest
+```
+
+### Direct Docker Commands
+```bash
+# Run all tests (inside Docker container)
+docker-compose exec -T php vendor/bin/phpunit tests/
 
 # Run specific test suite
-php bin/phpunit tests/Unit
-php bin/phpunit tests/Feature
+docker-compose exec -T php vendor/bin/phpunit tests/Unit
+docker-compose exec -T php vendor/bin/phpunit tests/Feature
+
+# Run specific test file
+docker-compose exec -T php vendor/bin/phpunit tests/Feature/Order/CreateOrderTest.php
+
+# Run with filter
+docker-compose exec -T php vendor/bin/phpunit tests/ --filter CreateOrderRequest
 
 # Run with coverage
-php bin/phpunit --coverage-html coverage/
+docker-compose exec -T php vendor/bin/phpunit --coverage-html coverage/
 ```
+
+### Test Execution Workflow
+1. **After making code changes** → Run `make test`
+2. **If tests fail** → Fix the issues immediately
+3. **Re-run tests** → Verify all tests pass
+4. **Only then** → Consider the work complete
+
+## Testing Requirements
+
+### Mandatory Tests for Controllers
+1. **Unit tests for Request DTOs** - Test `createCommand()` methods
+2. **Feature tests for all validation scenarios** - Test every validation constraint
+3. **Feature tests for success cases** - Test happy path
+4. **Feature tests for error responses** - Verify error structure and messages
+
+### Test Coverage Requirements
+- **Request DTOs**: 100% coverage (especially `createCommand()` methods)
+- **Controllers**: 90%+ coverage via feature tests
+- **Validation scenarios**: All constraints must be tested
+
+### Test Execution Requirements
+- **CRITICAL: Always run tests after code changes** - Use `make test` command
+- **All tests MUST pass** - Fix any failures before considering work complete
+- **Never commit code with failing tests** - Tests are a gate for code quality
+- **Run tests before finalizing any implementation** - Catch issues early

@@ -43,6 +43,9 @@ POSTGRES_DB=symfony
 POSTGRES_USER=symfony
 POSTGRES_PASSWORD=symfony
 DATABASE_URL=postgresql://symfony:symfony@postgres:5432/symfony
+
+# Payment Aggregator Configuration
+PAYMENT_AGGREGATOR_BASE_URL=http://some-pay-agregator.com
 ```
 
 ## Makefile Commands

@@ -130,6 +130,9 @@ Clients should not be forced to depend on interfaces they don't use.
 - Create specific, focused interfaces rather than large ones
 - Split large interfaces into smaller, more specific ones
 - Clients should only depend on methods they actually use
+- **CRITICAL: Only add methods to interfaces that are actually used**
+- Don't add "convenience" methods to interfaces unless they're explicitly required
+- Remove unused methods from interfaces immediately
 
 ### Example
 ```php

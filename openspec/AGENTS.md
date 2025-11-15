@@ -389,6 +389,38 @@ notifications/spec.md
 - Single-file implementations until proven insufficient
 - Avoid frameworks without clear justification
 - Choose boring, proven patterns
+- **Never create unused methods, functions, or classes**
+- Only implement what is required by the current use case
+- Apply YAGNI (You Aren't Gonna Need It) principle strictly
+
+### Controller and Request Best Practices
+- **Always create Request DTOs** - Never parse JSON manually in controllers
+- **Request DTOs must have `createCommand()` method** - Convert request to application command
+- **Use ValueResolver for automatic injection** - Request DTOs are injected as controller parameters
+- **Use Symfony Validation attributes** - Declarative validation on request DTOs
+- **Controllers must be thin** - Only orchestrate HTTP concerns, delegate to handlers
+- **Use exception listeners** - Handle validation errors globally, not in controllers
+- **Never manually validate** - Validation happens automatically before controller is called
+
+### Repository and Interface Design
+- **Only add repository methods that are actually used in the implementation**
+- Don't add "convenience" methods like `findById`, `findByX`, `getNextId` unless explicitly required
+- Before adding a method, verify it will be called from application handlers or services
+- After implementation, review and remove any unused methods
+- If a method seems useful but isn't used, document why it's needed or remove it
+- Prefer implementing the feature first, then adding methods only as needed
+
+### Testing Requirements
+- **MANDATORY: Unit tests for Request DTOs** - Always test `createCommand()` methods
+- **MANDATORY: Feature tests for all validation scenarios** - Test every validation constraint
+- **MANDATORY: Feature tests for error responses** - Verify error structure (`errors` or `error` key)
+- **MANDATORY: Feature tests for success cases** - Test happy path with valid data
+- **MANDATORY: Run all tests after code changes** - Use `make test` command
+- **MANDATORY: Fix failing tests before completion** - Never leave tests in a failing state
+- Test missing required fields, invalid types, invalid values, invalid JSON format
+- Verify specific error messages in validation tests
+- Request DTOs must have 100% test coverage
+- **Test execution is a gate** - All tests must pass before work is considered complete
 
 ### Complexity Triggers
 Only add complexity with:

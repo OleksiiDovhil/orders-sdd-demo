@@ -125,6 +125,10 @@ final readonly class Email
 ### Repositories
 - Interfaces defined in Domain layer
 - Implementations in Infrastructure layer
+- **CRITICAL: Only add methods that are actually used in the current implementation**
+- Don't add "convenience" methods unless they're explicitly required by the use case
+- Review repository usage before adding new methods
+- Remove unused methods immediately
 - Example interface:
 
 ```php
@@ -141,11 +145,20 @@ interface UserRepositoryInterface
 {
     public function save(User $user): void;
     
+    // Only add findById if it's actually used in the codebase
+    // Don't add "just in case" methods
     public function findById(UserId $id): ?User;
     
+    // Only add remove if it's actually used
     public function remove(User $user): void;
 }
 ```
+
+**Before adding a repository method:**
+1. Verify it's needed for the current feature/use case
+2. Check if it will be called from application handlers or services
+3. If unsure, implement the feature first, then add the method only if needed
+4. After implementation, review and remove any unused methods
 
 ### Domain Services
 - Business logic that doesn't naturally fit in entities or value objects
