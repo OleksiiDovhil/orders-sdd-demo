@@ -75,7 +75,7 @@ Checks the payment status of an order and returns a result that allows the front
 
 ---
 
-### 3. Get Recent Orders
+### 3. Get Recent Orders (DONE)
 
 Returns information about the specified number of most recent orders.
 
