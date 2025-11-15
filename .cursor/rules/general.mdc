@@ -1,0 +1,267 @@
+---
+description: General Coding Best Practices and Guidelines
+globs: ["**/*.php"]
+---
+
+# General Best Practices
+
+## Type Safety
+
+### Strict Types
+- Always use `declare(strict_types=1);` at the top of every PHP file
+- Enables strict type checking for better code quality
+
+### Type Hints
+- Use type hints for all parameters and return types
+- Use nullable types (`?Type`) when null is allowed
+- Use union types (`Type1|Type2`) when multiple types are acceptable (PHP 8.0+)
+- Avoid `mixed` type when possible
+
+### Return Types
+- Always declare return types
+- Use `void` for methods that don't return anything
+- Use `never` for methods that never return (PHP 8.1+)
+
+## Immutability
+
+### Value Objects
+- Make value objects immutable using `readonly` class
+- Use `readonly` properties in PHP 8.2+
+- Prefer immutable objects to reduce bugs
+
+### Example
+```php
+final readonly class Money
+{
+    public function __construct(
+        private float $amount,
+        private string $currency
+    ) {
+    }
+    
+    public function add(Money $other): Money
+    {
+        if ($this->currency !== $other->currency) {
+            throw new \InvalidArgumentException('Cannot add different currencies');
+        }
+        
+        return new Money($this->amount + $other->amount, $this->currency);
+    }
+}
+```
+
+## Null Safety
+
+### Nullable Types
+- Use nullable types explicitly (`?Type`)
+- Avoid null where possible
+- Use null coalescing operator (`??`) and nullsafe operator (`?->`) when appropriate
+
+### Example
+```php
+public function findUser(?string $id): ?User
+{
+    if ($id === null) {
+        return null;
+    }
+    
+    return $this->repository->findById($id);
+}
+
+// Use nullsafe operator
+$email = $user?->getEmail()?->getValue();
+```
+
+## Error Handling
+
+### Custom Exceptions
+- Create custom domain exceptions
+- Use meaningful exception messages
+- Don't use generic exceptions (`\Exception`, `\RuntimeException`)
+
+### Exception Hierarchy
+```php
+namespace App\Domain\User\Exception;
+
+class UserException extends \DomainException
+{
+}
+
+class UserNotFoundException extends UserException
+{
+    public function __construct(string $userId)
+    {
+        parent::__construct("User with ID '{$userId}' not found");
+    }
+}
+
+class InvalidEmailException extends UserException
+{
+    public function __construct(string $email)
+    {
+        parent::__construct("Invalid email address: '{$email}'");
+    }
+}
+```
+
+## Documentation
+
+### PHPDoc Comments
+- Add PHPDoc comments for public methods
+- Document complex logic
+- Use `@param`, `@return`, `@throws` annotations
+
+### Example
+```php
+/**
+ * Creates a new user with the given email and name.
+ *
+ * @param Email $email The user's email address
+ * @param string $name The user's full name
+ * @return User The created user entity
+ * @throws InvalidEmailException When the email is already in use
+ */
+public function createUser(Email $email, string $name): User
+{
+    // Implementation
+}
+```
+
+## Code Organization
+
+### Method Size
+- Keep methods small and focused
+- Aim for methods under 20 lines when possible
+- Extract complex logic into separate methods
+
+### Complexity
+- Avoid deep nesting (max 3-4 levels)
+- Prefer early returns over nested if statements
+- Use guard clauses
+
+### Example
+```php
+// Good: Early returns
+public function process(User $user): void
+{
+    if (!$user->isActive()) {
+        return;
+    }
+    
+    if ($user->isBlocked()) {
+        return;
+    }
+    
+    // Process active, non-blocked user
+}
+
+// Avoid: Deep nesting
+public function process(User $user): void
+{
+    if ($user->isActive()) {
+        if (!$user->isBlocked()) {
+            // Process user
+        }
+    }
+}
+```
+
+## Naming
+
+### Meaningful Names
+- Use names that express intent
+- Avoid abbreviations unless widely understood
+- Use domain terminology from ubiquitous language
+
+### Examples
+```php
+// Good
+public function calculateTotalPrice(Order $order): Money
+public function findActiveUsers(): array
+public function sendWelcomeEmail(User $user): void
+
+// Avoid
+public function calc(Order $o): Money
+public function getUsers(): array
+public function send(User $u): void
+```
+
+## Dependency Management
+
+### Dependency Injection
+- Always use dependency injection
+- Never instantiate dependencies directly
+- Inject through constructor
+
+### Example
+```php
+// Good
+public function __construct(
+    private readonly UserRepositoryInterface $userRepository
+) {
+}
+
+// Avoid
+public function __construct()
+{
+    $this->userRepository = new DatabaseUserRepository();
+}
+```
+
+## Performance Considerations
+
+### Lazy Loading
+- Use lazy loading for expensive operations
+- Consider caching strategies for repositories
+- Optimize database queries
+
+### Memory Management
+- Be mindful of memory usage in loops
+- Use generators for large datasets
+- Unset large variables when done
+
+## Security
+
+### Input Validation
+- Validate all user input at boundaries
+- Never trust user input
+- Use type hints and validation constraints
+
+### Data Sanitization
+- Sanitize data before storing
+- Escape output to prevent XSS
+- Use parameterized queries to prevent SQL injection
+
+## Version Control
+
+### Commit Messages
+- Write meaningful commit messages
+- Follow conventional commits format:
+  - `feat:` for new features
+  - `fix:` for bug fixes
+  - `refactor:` for code refactoring
+  - `test:` for adding tests
+  - `docs:` for documentation
+
+### Example
+```
+feat(user): add user creation endpoint
+
+- Add CreateUserController
+- Add CreateUserCommand and Handler
+- Add User entity and value objects
+- Add unit tests for domain logic
+```
+
+## Code Review Checklist
+
+1. ✅ Follows DDD structure
+2. ✅ PSR-12 compliant
+3. ✅ SOLID principles applied
+4. ✅ Type hints and strict types
+5. ✅ Tests written and passing
+6. ✅ Meaningful names
+7. ✅ No deep nesting
+8. ✅ Proper error handling
+9. ✅ Documentation added
+10. ✅ Security considerations addressed

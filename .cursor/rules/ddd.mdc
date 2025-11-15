@@ -1,0 +1,173 @@
+---
+description: Domain Driven Design (DDD) Architecture and Principles
+globs: ["src/Domain/**/*.php", "src/Application/**/*.php"]
+---
+
+# Domain Driven Design (DDD)
+
+## Directory Structure
+Follow DDD structure within `src/`:
+```
+src/
+├── Domain/
+│   ├── {BoundedContext}/
+│   │   ├── Entity/          # Aggregate roots and entities
+│   │   ├── ValueObject/      # Immutable value objects
+│   │   ├── Repository/       # Repository interfaces
+│   │   ├── Service/          # Domain services
+│   │   ├── Event/            # Domain events
+│   │   └── Exception/        # Domain exceptions
+├── Application/
+│   ├── {BoundedContext}/
+│   │   ├── Command/          # Command handlers (CQRS)
+│   │   ├── Query/            # Query handlers (CQRS)
+│   │   ├── DTO/              # Data Transfer Objects
+│   │   └── Service/          # Application services
+├── Infrastructure/
+│   ├── Persistence/          # Repository implementations
+│   ├── Event/                # Event listeners/dispatchers
+│   └── External/             # External service integrations
+└── Presentation/
+    ├── Controller/           # HTTP controllers (thin, delegate to application layer)
+    ├── Request/              # Request DTOs/Form types
+    └── Response/             # Response DTOs
+```
+
+## DDD Principles
+
+### Entities
+- Objects with identity (ID)
+- Use `readonly` properties where possible in PHP 8.4
+- Encapsulate business logic within the entity
+- Example:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\User\Entity;
+
+use App\Domain\User\ValueObject\UserId;
+use App\Domain\User\ValueObject\Email;
+
+final class User
+{
+    public function __construct(
+        private readonly UserId $id,
+        private readonly Email $email,
+        private string $name,
+    ) {
+    }
+
+    public function getId(): UserId
+    {
+        return $this->id;
+    }
+
+    public function getEmail(): Email
+    {
+        return $this->email;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function changeName(string $name): void
+    {
+        $this->name = $name;
+    }
+}
+```
+
+### Value Objects
+- Immutable objects without identity
+- Use `readonly` class with `readonly` properties
+- Must be comparable (implement equals method)
+- Example:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\User\ValueObject;
+
+final readonly class Email
+{
+    public function __construct(
+        private string $value
+    ) {
+        if (!filter_var($this->value, FILTER_VALIDATE_EMAIL)) {
+            throw new \InvalidArgumentException('Invalid email address');
+        }
+    }
+
+    public function getValue(): string
+    {
+        return $this->value;
+    }
+
+    public function equals(Email $other): bool
+    {
+        return $this->value === $other->value;
+    }
+}
+```
+
+### Aggregates
+- Cluster of entities and value objects with a single aggregate root
+- Aggregate root is the only entry point for modifications
+- Maintain consistency boundaries
+
+### Repositories
+- Interfaces defined in Domain layer
+- Implementations in Infrastructure layer
+- Example interface:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\User\Repository;
+
+use App\Domain\User\Entity\User;
+use App\Domain\User\ValueObject\UserId;
+
+interface UserRepositoryInterface
+{
+    public function save(User $user): void;
+    
+    public function findById(UserId $id): ?User;
+    
+    public function remove(User $user): void;
+}
+```
+
+### Domain Services
+- Business logic that doesn't naturally fit in entities or value objects
+- Stateless operations
+- Located in `Domain/{BoundedContext}/Service/`
+
+### Application Services
+- Orchestrate domain objects to fulfill use cases
+- Thin layer that coordinates domain objects
+- Located in `Application/{BoundedContext}/Service/`
+
+### Bounded Contexts
+- Separate contexts for different business domains
+- Each bounded context has its own domain model
+- Use clear boundaries between contexts
+
+## Best Practices
+
+1. **Keep Domain Layer Pure**: No infrastructure dependencies in Domain layer
+2. **Rich Domain Model**: Encapsulate business logic in entities and value objects
+3. **Ubiquitous Language**: Use domain terminology consistently
+4. **Aggregate Design**: Keep aggregates small and focused
+5. **Repository Pattern**: Abstract data access behind interfaces
+6. **Domain Events**: Use events for cross-aggregate communication
+7. **Application Layer**: Thin orchestration layer, delegates to domain

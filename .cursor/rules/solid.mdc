@@ -1,0 +1,245 @@
+---
+description: SOLID Principles Implementation Guidelines
+globs: ["src/**/*.php"]
+---
+
+# SOLID Principles
+
+## Single Responsibility Principle (SRP)
+
+### Definition
+A class should have only one reason to change. Each class should have a single, well-defined responsibility.
+
+### Implementation
+- Separate concerns: domain logic, persistence, presentation, etc.
+- If a class does multiple things, split it into multiple classes
+- Each class should have a clear, single purpose
+
+### Example
+```php
+// Bad: Multiple responsibilities
+class UserManager
+{
+    public function createUser(string $email): void { }
+    public function sendEmail(string $email): void { }
+    public function saveToDatabase(User $user): void { }
+}
+
+// Good: Single responsibility
+class UserService
+{
+    public function createUser(string $email): User { }
+}
+
+class EmailService
+{
+    public function sendEmail(string $email): void { }
+}
+
+class UserRepository
+{
+    public function save(User $user): void { }
+}
+```
+
+## Open/Closed Principle (OCP)
+
+### Definition
+Software entities should be open for extension but closed for modification.
+
+### Implementation
+- Use interfaces and abstract classes
+- Prefer composition over inheritance
+- Use strategy pattern, dependency injection
+- Allow behavior extension without modifying existing code
+
+### Example
+```php
+// Good: Open for extension
+interface PaymentProcessorInterface
+{
+    public function process(float $amount): void;
+}
+
+class CreditCardProcessor implements PaymentProcessorInterface
+{
+    public function process(float $amount): void { }
+}
+
+class PayPalProcessor implements PaymentProcessorInterface
+{
+    public function process(float $amount): void { }
+}
+
+class PaymentService
+{
+    public function __construct(
+        private readonly PaymentProcessorInterface $processor
+    ) {
+    }
+    
+    public function pay(float $amount): void
+    {
+        $this->processor->process($amount);
+    }
+}
+```
+
+## Liskov Substitution Principle (LSP)
+
+### Definition
+Objects of a superclass should be replaceable with objects of its subclasses without breaking the application.
+
+### Implementation
+- Derived classes must be substitutable for their base classes
+- Ensure interface implementations are fully compatible
+- Don't weaken preconditions or strengthen postconditions
+- Don't throw exceptions not expected by base class
+
+### Example
+```php
+// Good: All implementations are substitutable
+interface RepositoryInterface
+{
+    public function findById(string $id): ?Entity;
+}
+
+class UserRepository implements RepositoryInterface
+{
+    public function findById(string $id): ?User
+    {
+        // Implementation
+    }
+}
+
+class ProductRepository implements RepositoryInterface
+{
+    public function findById(string $id): ?Product
+    {
+        // Implementation
+    }
+}
+```
+
+## Interface Segregation Principle (ISP)
+
+### Definition
+Clients should not be forced to depend on interfaces they don't use.
+
+### Implementation
+- Create specific, focused interfaces rather than large ones
+- Split large interfaces into smaller, more specific ones
+- Clients should only depend on methods they actually use
+
+### Example
+```php
+// Bad: Large interface
+interface WorkerInterface
+{
+    public function work(): void;
+    public function eat(): void;
+    public function sleep(): void;
+}
+
+// Good: Segregated interfaces
+interface WorkableInterface
+{
+    public function work(): void;
+}
+
+interface EatableInterface
+{
+    public function eat(): void;
+}
+
+interface SleepableInterface
+{
+    public function sleep(): void;
+}
+
+class Human implements WorkableInterface, EatableInterface, SleepableInterface
+{
+    public function work(): void { }
+    public function eat(): void { }
+    public function sleep(): void { }
+}
+
+class Robot implements WorkableInterface
+{
+    public function work(): void { }
+}
+```
+
+## Dependency Inversion Principle (DIP)
+
+### Definition
+High-level modules should not depend on low-level modules. Both should depend on abstractions.
+
+### Implementation
+- Depend on abstractions (interfaces), not concretions
+- Inject dependencies through constructor
+- Use Symfony's service container for dependency injection
+- Domain layer should not depend on infrastructure
+
+### Example
+```php
+// Bad: Depends on concrete implementation
+class UserService
+{
+    private DatabaseUserRepository $repository;
+    
+    public function __construct()
+    {
+        $this->repository = new DatabaseUserRepository();
+    }
+}
+
+// Good: Depends on abstraction
+class UserService
+{
+    public function __construct(
+        private readonly UserRepositoryInterface $repository
+    ) {
+    }
+}
+
+// Interface in Domain layer
+interface UserRepositoryInterface
+{
+    public function save(User $user): void;
+    public function findById(UserId $id): ?User;
+}
+
+// Implementation in Infrastructure layer
+class DatabaseUserRepository implements UserRepositoryInterface
+{
+    public function save(User $user): void { }
+    public function findById(UserId $id): ?User { }
+}
+```
+
+## SOLID in Symfony Context
+
+### Dependency Injection
+- Always use constructor injection
+- Register interfaces in `config/services.yaml`
+- Use autowiring and autoconfiguration
+
+### Service Configuration
+```yaml
+# config/services.yaml
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\Domain\User\Repository\UserRepositoryInterface:
+        alias: App\Infrastructure\Persistence\UserRepository
+```
+
+### Best Practices
+1. **SRP**: Keep services focused on single responsibility
+2. **OCP**: Use interfaces and allow extension through configuration
+3. **LSP**: Ensure all interface implementations are fully compatible
+4. **ISP**: Create focused interfaces for specific use cases
+5. **DIP**: Domain layer depends on interfaces, infrastructure implements them

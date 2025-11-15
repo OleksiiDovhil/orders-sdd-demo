@@ -1,0 +1,310 @@
+---
+description: Symfony Framework Best Practices and Guidelines
+globs: ["src/Presentation/**/*.php", "config/**/*.yaml", "src/Infrastructure/**/*.php"]
+---
+
+# Symfony Best Practices
+
+## Controllers
+
+### Thin Controllers
+- Keep controllers thin - delegate to application services
+- Controllers should only handle HTTP concerns (request/response)
+- Business logic belongs in Application layer
+
+### Controller Example
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Presentation\Controller\User;
+
+use App\Application\User\Command\CreateUserCommand;
+use App\Application\User\Command\CreateUserHandler;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+final class CreateUserController extends AbstractController
+{
+    public function __construct(
+        private readonly CreateUserHandler $handler
+    ) {
+    }
+
+    #[Route('/api/users', name: 'api_users_create', methods: ['POST'])]
+    public function __invoke(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        
+        $command = new CreateUserCommand(
+            $data['email'] ?? '',
+            $data['name'] ?? ''
+        );
+        
+        $user = $this->handler->handle($command);
+        
+        return new JsonResponse(
+            [
+                'id' => $user->getId()->getValue(),
+                'email' => $user->getEmail()->getValue(),
+                'name' => $user->getName(),
+            ],
+            Response::HTTP_CREATED
+        );
+    }
+}
+```
+
+### HTTP Status Codes
+- Use appropriate HTTP status codes
+- 200: Success (GET, PUT, PATCH)
+- 201: Created (POST)
+- 204: No Content (DELETE)
+- 400: Bad Request (validation errors)
+- 404: Not Found
+- 500: Internal Server Error
+
+## Services
+
+### Service Registration
+- Register services in `config/services.yaml`
+- Use autowiring and autoconfiguration
+- Tag services appropriately
+
+### Service Configuration Example
+```yaml
+# config/services.yaml
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # Interface to implementation mapping
+    App\Domain\User\Repository\UserRepositoryInterface:
+        alias: App\Infrastructure\Persistence\UserRepository
+
+    # Event listeners
+    App\Infrastructure\Event\UserCreatedListener:
+        tags:
+            - { name: kernel.event_listener, event: user.created }
+```
+
+### Service Naming
+- Use FQCN (Fully Qualified Class Name) for service IDs
+- Symfony will auto-generate service IDs from class names
+- Use aliases for interfaces
+
+## Configuration
+
+### YAML Configuration
+- Use YAML for configuration files
+- Keep environment-specific config in `.env` files
+- Use Symfony's parameter system for config values
+
+### Environment Variables
+```bash
+# .env
+DATABASE_URL=mysql://user:password@127.0.0.1:3306/dbname
+APP_ENV=dev
+APP_SECRET=your-secret-key
+```
+
+### Parameter Configuration
+```yaml
+# config/services.yaml
+parameters:
+    app.max_users_per_page: 50
+    app.email.from: 'noreply@example.com'
+```
+
+## Routing
+
+### Attribute Routing (Preferred)
+```php
+#[Route('/api/users/{id}', name: 'api_users_get', methods: ['GET'])]
+public function getUser(string $id): JsonResponse
+{
+    // ...
+}
+```
+
+### YAML Routing
+```yaml
+# config/routes.yaml
+api_users_get:
+    path: /api/users/{id}
+    controller: App\Presentation\Controller\User\GetUserController
+    methods: [GET]
+```
+
+## Dependency Injection
+
+### Constructor Injection (Preferred)
+```php
+public function __construct(
+    private readonly UserRepositoryInterface $userRepository,
+    private readonly EventDispatcherInterface $eventDispatcher
+) {
+}
+```
+
+### Property Injection (Avoid)
+- Only use when necessary (e.g., circular dependencies)
+- Prefer constructor injection
+
+## Events
+
+### Domain Events
+- Use Symfony EventDispatcher for domain events
+- Define event classes in Domain layer
+- Listeners in Infrastructure layer
+
+### Event Example
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\User\Event;
+
+use App\Domain\User\ValueObject\UserId;
+
+final class UserCreatedEvent
+{
+    public function __construct(
+        public readonly UserId $userId,
+        public readonly string $email
+    ) {
+    }
+}
+```
+
+### Event Listener
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Infrastructure\Event;
+
+use App\Domain\User\Event\UserCreatedEvent;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+
+#[AsEventListener(event: UserCreatedEvent::class)]
+final class UserCreatedListener
+{
+    public function __invoke(UserCreatedEvent $event): void
+    {
+        // Handle event (e.g., send welcome email)
+    }
+}
+```
+
+## Validation
+
+### Request Validation
+- Validate at the boundary (controllers, form types)
+- Use Symfony Validator component
+- Create custom constraints for domain validation
+
+### Validation Example
+```php
+use Symfony\Component\Validator\Constraints as Assert;
+
+final class CreateUserRequest
+{
+    #[Assert\NotBlank]
+    #[Assert\Email]
+    public string $email;
+
+    #[Assert\NotBlank]
+    #[Assert\Length(min: 2, max: 100)]
+    public string $name;
+}
+```
+
+## Error Handling
+
+### Exception Handling
+- Use custom domain exceptions
+- Create exception listeners for global error handling
+- Return appropriate HTTP status codes
+
+### Exception Listener Example
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Infrastructure\Event;
+
+use App\Domain\User\Exception\UserNotFoundException;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Event\ExceptionEvent;
+use Symfony\Component\HttpKernel\KernelEvents;
+
+#[AsEventListener(event: KernelEvents::EXCEPTION)]
+final class ExceptionListener
+{
+    public function onKernelException(ExceptionEvent $event): void
+    {
+        $exception = $event->getThrowable();
+        
+        if ($exception instanceof UserNotFoundException) {
+            $response = new JsonResponse(
+                ['error' => 'User not found'],
+                404
+            );
+            $event->setResponse($response);
+        }
+    }
+}
+```
+
+## Security
+
+### Input Validation
+- Validate and sanitize all user input at boundaries
+- Use type hints and strict types
+- Never trust user input
+
+### Authentication & Authorization
+- Use Symfony Security component
+- Implement proper authentication mechanisms
+- Use voters for complex authorization logic
+
+## Performance
+
+### Caching
+- Use Symfony Cache component
+- Cache expensive operations
+- Use appropriate cache adapters
+
+### Database Queries
+- Use Doctrine Query Builder for complex queries
+- Avoid N+1 query problems
+- Use eager loading when appropriate
+
+## Best Practices Summary
+
+1. **Thin Controllers**: Delegate to application services
+2. **Service Autowiring**: Use constructor injection
+3. **Configuration**: Use YAML and environment variables
+4. **Routing**: Prefer attribute routing
+5. **Events**: Use domain events for decoupling
+6. **Validation**: Validate at boundaries
+7. **Error Handling**: Use custom exceptions and listeners
+8. **Security**: Validate all input, use security component
+9. **Performance**: Cache appropriately, optimize queries

@@ -1,0 +1,375 @@
+---
+description: Unit and Feature Testing Guidelines
+globs: ["tests/**/*.php"]
+---
+
+# Testing Guidelines
+
+## Test Structure
+
+### Directory Organization
+Mirror `src/` structure in `tests/`:
+```
+tests/
+├── Unit/
+│   └── Domain/
+│       └── {BoundedContext}/
+│           ├── Entity/
+│           ├── ValueObject/
+│           └── Service/
+├── Feature/
+│   └── {BoundedContext}/
+│       └── {UseCase}Test.php
+└── Integration/
+    └── Infrastructure/
+```
+
+## Test Types
+
+### Unit Tests
+- Test individual classes in isolation
+- Focus on Domain layer (entities, value objects, domain services)
+- Mock all external dependencies
+- Fast execution
+- High code coverage target
+
+### Feature Tests
+- Test complete use cases end-to-end
+- Test Application layer (commands, queries, services)
+- May use real implementations or test doubles
+- Verify business logic flows
+
+### Integration Tests
+- Test Infrastructure layer
+- Test interactions with external systems (database, APIs)
+- Use test database or mocks for external services
+
+## Testing Best Practices
+
+### AAA Pattern
+Follow Arrange, Act, Assert pattern:
+
+```php
+public function testShouldCreateValidEmail(): void
+{
+    // Arrange
+    $emailValue = 'user@example.com';
+    
+    // Act
+    $email = new Email($emailValue);
+    
+    // Assert
+    $this->assertSame($emailValue, $email->getValue());
+}
+```
+
+### Test Naming
+- Use descriptive test method names
+- Format: `testShould{ExpectedBehavior}When{Condition}()`
+- Examples:
+  - `testShouldThrowExceptionWhenEmailIsInvalid()`
+  - `testShouldReturnUserWhenIdExists()`
+  - `testShouldReturnNullWhenUserNotFound()`
+
+### Test Organization
+- One test class per class under test
+- Group related tests using `@group` annotation
+- Use data providers for testing multiple scenarios
+
+## Unit Test Examples
+
+### Value Object Test
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Unit\Domain\User\ValueObject;
+
+use App\Domain\User\ValueObject\Email;
+use PHPUnit\Framework\TestCase;
+
+final class EmailTest extends TestCase
+{
+    public function testShouldCreateValidEmail(): void
+    {
+        $email = new Email('user@example.com');
+        
+        $this->assertSame('user@example.com', $email->getValue());
+    }
+
+    public function testShouldThrowExceptionWhenEmailIsInvalid(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid email address');
+        
+        new Email('invalid-email');
+    }
+
+    public function testShouldReturnTrueWhenEmailsAreEqual(): void
+    {
+        $email1 = new Email('user@example.com');
+        $email2 = new Email('user@example.com');
+        
+        $this->assertTrue($email1->equals($email2));
+    }
+
+    public function testShouldReturnFalseWhenEmailsAreDifferent(): void
+    {
+        $email1 = new Email('user1@example.com');
+        $email2 = new Email('user2@example.com');
+        
+        $this->assertFalse($email1->equals($email2));
+    }
+}
+```
+
+### Entity Test
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Unit\Domain\User\Entity;
+
+use App\Domain\User\Entity\User;
+use App\Domain\User\ValueObject\Email;
+use App\Domain\User\ValueObject\UserId;
+use PHPUnit\Framework\TestCase;
+
+final class UserTest extends TestCase
+{
+    public function testShouldCreateUser(): void
+    {
+        $userId = UserId::generate();
+        $email = new Email('user@example.com');
+        $name = 'John Doe';
+        
+        $user = new User($userId, $email, $name);
+        
+        $this->assertSame($userId, $user->getId());
+        $this->assertSame($email, $user->getEmail());
+        $this->assertSame($name, $user->getName());
+    }
+
+    public function testShouldChangeName(): void
+    {
+        $user = $this->createUser();
+        $newName = 'Jane Doe';
+        
+        $user->changeName($newName);
+        
+        $this->assertSame($newName, $user->getName());
+    }
+
+    private function createUser(): User
+    {
+        return new User(
+            UserId::generate(),
+            new Email('user@example.com'),
+            'John Doe'
+        );
+    }
+}
+```
+
+### Domain Service Test with Mocking
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Unit\Domain\User\Service;
+
+use App\Domain\User\Entity\User;
+use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\User\Service\UserService;
+use App\Domain\User\ValueObject\Email;
+use App\Domain\User\ValueObject\UserId;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+final class UserServiceTest extends TestCase
+{
+    private UserRepositoryInterface&MockObject $repository;
+    private UserService $service;
+
+    protected function setUp(): void
+    {
+        $this->repository = $this->createMock(UserRepositoryInterface::class);
+        $this->service = new UserService($this->repository);
+    }
+
+    public function testShouldCreateUser(): void
+    {
+        $email = new Email('user@example.com');
+        $name = 'John Doe';
+        
+        $this->repository
+            ->expects($this->once())
+            ->method('save')
+            ->with($this->callback(function (User $user) use ($email, $name) {
+                return $user->getEmail()->equals($email) 
+                    && $user->getName() === $name;
+            }));
+        
+        $user = $this->service->createUser($email, $name);
+        
+        $this->assertInstanceOf(User::class, $user);
+    }
+}
+```
+
+## Feature Test Examples
+
+### Application Service Test
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Feature\User;
+
+use App\Application\User\Command\CreateUserCommand;
+use App\Application\User\Command\CreateUserHandler;
+use App\Domain\User\Repository\UserRepositoryInterface;
+use PHPUnit\Framework\TestCase;
+
+final class CreateUserTest extends TestCase
+{
+    private UserRepositoryInterface $repository;
+    private CreateUserHandler $handler;
+
+    protected function setUp(): void
+    {
+        // Use real repository or in-memory implementation
+        $this->repository = new InMemoryUserRepository();
+        $this->handler = new CreateUserHandler($this->repository);
+    }
+
+    public function testShouldCreateUserSuccessfully(): void
+    {
+        $command = new CreateUserCommand(
+            'user@example.com',
+            'John Doe'
+        );
+        
+        $user = $this->handler->handle($command);
+        
+        $this->assertNotNull($user);
+        $this->assertSame('user@example.com', $user->getEmail()->getValue());
+        $this->assertSame('John Doe', $user->getName());
+        
+        $savedUser = $this->repository->findById($user->getId());
+        $this->assertNotNull($savedUser);
+    }
+}
+```
+
+### HTTP Endpoint Test
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Feature\User;
+
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+
+final class CreateUserEndpointTest extends WebTestCase
+{
+    public function testShouldCreateUserViaApi(): void
+    {
+        $client = static::createClient();
+        
+        $client->request(
+            'POST',
+            '/api/users',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode([
+                'email' => 'user@example.com',
+                'name' => 'John Doe',
+            ])
+        );
+        
+        $this->assertResponseStatusCodeSame(201);
+        $this->assertJson($client->getResponse()->getContent());
+        
+        $response = json_decode($client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('id', $response);
+        $this->assertSame('user@example.com', $response['email']);
+    }
+
+    public function testShouldReturn400WhenEmailIsInvalid(): void
+    {
+        $client = static::createClient();
+        
+        $client->request(
+            'POST',
+            '/api/users',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode([
+                'email' => 'invalid-email',
+                'name' => 'John Doe',
+            ])
+        );
+        
+        $this->assertResponseStatusCodeSame(400);
+    }
+}
+```
+
+## Test Utilities
+
+### Test Doubles
+- Use PHPUnit mocks for external dependencies
+- Create in-memory implementations for repositories
+- Use test fixtures for complex data setup
+
+### Data Providers
+```php
+/**
+ * @dataProvider invalidEmailProvider
+ */
+public function testShouldThrowExceptionForInvalidEmails(string $invalidEmail): void
+{
+    $this->expectException(\InvalidArgumentException::class);
+    
+    new Email($invalidEmail);
+}
+
+public static function invalidEmailProvider(): array
+{
+    return [
+        ['invalid'],
+        ['@example.com'],
+        ['user@'],
+        ['user@example'],
+    ];
+}
+```
+
+## Coverage Goals
+
+- **Domain Layer**: 100% coverage (entities, value objects, domain services)
+- **Application Layer**: 90%+ coverage
+- **Infrastructure Layer**: 80%+ coverage
+- **Presentation Layer**: 70%+ coverage
+
+## Running Tests
+
+```bash
+# Run all tests
+php bin/phpunit
+
+# Run specific test suite
+php bin/phpunit tests/Unit
+php bin/phpunit tests/Feature
+
+# Run with coverage
+php bin/phpunit --coverage-html coverage/
+```

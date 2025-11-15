@@ -1,0 +1,195 @@
+---
+description: PSR-12 Extended Coding Style Guide
+globs: ["*.php", "src/**/*.php", "tests/**/*.php"]
+---
+
+# PSR-12 Coding Standards
+
+## File Structure
+
+### Required Elements
+- `declare(strict_types=1);` at the top of every PHP file
+- Type hints for all parameters and return types
+- Use `readonly` properties and classes where appropriate (PHP 8.4)
+
+### File Format
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\User\Service;
+
+final class UserService
+{
+    public function __construct(
+        private readonly UserRepositoryInterface $userRepository
+    ) {
+    }
+
+    public function createUser(string $email, string $name): User
+    {
+        // Implementation
+    }
+}
+```
+
+## Formatting Rules
+
+### Indentation
+- Use 4 spaces for indentation (no tabs)
+- No trailing whitespace
+- Files must end with a single blank line
+
+### Braces
+- Opening braces on the same line for classes and methods
+- Opening braces on new line for control structures (if, for, while, etc.)
+
+### Spacing
+- One blank line between methods
+- One blank line after namespace declaration
+- No blank line after opening brace
+- No blank line before closing brace
+
+### Control Structures
+```php
+if ($condition) {
+    // code
+} elseif ($otherCondition) {
+    // code
+} else {
+    // code
+}
+
+foreach ($items as $item) {
+    // code
+}
+
+while ($condition) {
+    // code
+}
+```
+
+## Naming Conventions
+
+- **Classes**: `PascalCase`
+- **Methods**: `camelCase`
+- **Properties**: `camelCase`
+- **Constants**: `UPPER_SNAKE_CASE`
+- **Private properties**: No underscore prefix unless needed for clarity
+
+## Type Declarations
+
+### Required Type Hints
+- All function/method parameters must have type hints
+- All return types must be declared
+- Use nullable types (`?Type`) when null is allowed
+- Use union types (`Type1|Type2`) when multiple types are allowed (PHP 8.0+)
+
+### Examples
+```php
+public function process(string $input): string
+{
+    return strtoupper($input);
+}
+
+public function findById(?int $id): ?User
+{
+    return $id !== null ? $this->repository->find($id) : null;
+}
+
+public function handle(string|int $value): void
+{
+    // Handle both string and int
+}
+```
+
+## Property Declarations
+
+### Use Constructor Property Promotion (PHP 8.0+)
+```php
+public function __construct(
+    private readonly UserRepositoryInterface $userRepository,
+    private string $name,
+) {
+}
+```
+
+### Use Readonly Properties (PHP 8.2+)
+```php
+final readonly class Email
+{
+    public function __construct(
+        private string $value
+    ) {
+    }
+}
+```
+
+## Method Declarations
+
+### Visibility
+- Always declare visibility (public, protected, private)
+- Prefer private over protected
+- Use public only when necessary
+
+### Method Order
+1. Constructor
+2. Public methods
+3. Protected methods
+4. Private methods
+
+## Class Declarations
+
+### Final Classes
+- Prefer `final` classes unless inheritance is required
+- Makes intent clear and prevents unintended extension
+
+### Abstract Classes
+- Use only when providing shared implementation
+- Prefer composition over inheritance
+
+## Import Statements
+
+### Use Statements
+- Group use statements: classes, functions, constants
+- Alphabetically sorted within each group
+- One use statement per line
+
+```php
+use App\Domain\User\Entity\User;
+use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\User\ValueObject\Email;
+use App\Domain\User\ValueObject\UserId;
+```
+
+## Code Organization
+
+### Early Returns
+- Prefer early returns over nested if statements
+- Reduces cognitive complexity
+
+```php
+// Good
+public function process(User $user): void
+{
+    if (!$user->isActive()) {
+        return;
+    }
+    
+    // Process active user
+}
+
+// Avoid
+public function process(User $user): void
+{
+    if ($user->isActive()) {
+        // Process active user
+    }
+}
+```
+
+### Line Length
+- Keep lines under 120 characters when possible
+- Break long lines at logical points
+- Align continuation lines appropriately
