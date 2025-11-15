@@ -260,6 +260,16 @@ final class UserCreatedListener
 - **Use Validation attributes** - `#[Assert\NotBlank]`, `#[Assert\Type]`, `#[Assert\Choice]`, etc.
 - **Type safety** - Use proper type hints for all properties
 - **Immutable** - Use `readonly` class to prevent modification
+- **OpenAPI Documentation** - Add `OA\Schema` and `OA\Property` attributes to request DTOs for API documentation
+
+### OpenAPI Documentation
+- **MANDATORY: Add OpenAPI documentation to both Controller and Request classes**
+- **Request classes**: Add `OA\Schema` attribute to the class and `OA\Property` attributes to each property
+- **Controller classes**: Add `OA\Get`, `OA\Post`, etc. attributes with endpoint documentation
+- **Request body schemas**: Reference request schemas from Request classes using `ref: '#/components/schemas/SchemaName'`
+- **OpenAPI generator**: The generator scans both `src/Presentation/Controller` and `src/Presentation/Request` directories
+- **Schema definitions**: Define schemas in Request classes, not in separate Schema classes
+- **Example**: For request bodies, use `new OA\JsonContent(ref: '#/components/schemas/CreateOrderRequest')` in controller, and define the schema in the Request class with `#[OA\Schema(schema: 'CreateOrderRequest', ...)]`
 
 ### Automatic Request Injection
 - Use `RequestValueResolver` for automatic deserialization and validation

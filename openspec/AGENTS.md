@@ -488,6 +488,39 @@ notifications/spec.md
 - **Use exception listeners** - Handle validation errors globally, not in controllers
 - **Never manually validate** - Validation happens automatically before controller is called
 
+### OpenAPI Documentation Requirements
+- **MANDATORY: Add OpenAPI documentation to both Controller and Request classes**
+- **Request classes**: 
+  - Add `#[OA\Schema(schema: 'SchemaName', ...)]` attribute to the class
+  - Add `#[OA\Property(property: 'propertyName', ...)]` attributes to each property
+  - For nested objects (like order items), use `ref: '#/components/schemas/OrderItem'` in the items definition
+- **Controller classes**:
+  - Add `#[OA\Get]`, `#[OA\Post]`, etc. attributes with endpoint documentation
+  - For request bodies, reference Request class schemas: `new OA\JsonContent(ref: '#/components/schemas/CreateOrderRequest')`
+  - For query/path parameters, document them in the controller's `parameters` array
+- **OpenAPI generator configuration**: 
+  - The generator scans both `src/Presentation/Controller` and `src/Presentation/Request` directories
+  - Schema definitions belong in Request classes, not in separate Schema classes
+- **Example Request class**:
+  ```php
+  #[OA\Schema(schema: 'CreateOrderRequest', type: 'object', required: ['sum', 'contractorType', 'items'])]
+  final readonly class CreateOrderRequest
+  {
+      #[OA\Property(property: 'sum', type: 'integer', description: 'Total order amount in cents')]
+      #[Assert\NotBlank]
+      public int $sum;
+      
+      #[OA\Property(property: 'items', type: 'array', items: new OA\Items(ref: '#/components/schemas/OrderItem'))]
+      public array $items;
+  }
+  ```
+- **Example Controller reference**:
+  ```php
+  requestBody: new OA\RequestBody(
+      content: new OA\JsonContent(ref: '#/components/schemas/CreateOrderRequest')
+  )
+  ```
+
 ### Repository and Interface Design
 - **Only add repository methods that are actually used in the implementation**
 - Don't add "convenience" methods like `findById`, `findByX`, `getNextId` unless explicitly required
