@@ -78,6 +78,15 @@ After deployment, create separate PR to:
 - Use `openspec show [spec]` to review current state
 - If request is ambiguous, ask 1–2 clarifying questions before scaffolding
 
+**Running PHP Commands:**
+- **ALWAYS** run PHP-related commands inside the PHP container, never directly in the console
+- Use `docker-compose exec php <command>` or `docker exec symfony-php <command>`
+- Examples:
+  - `docker-compose exec php bin/console <command>` for Symfony console commands
+  - `docker-compose exec php composer <command>` for Composer commands
+  - `docker-compose exec php php <script>` for PHP scripts
+- The container name is `symfony-php` and the service name is `php`
+
 ### Search Guidance
 - Enumerate specs: `openspec spec list --long` (or `--json` for scripts)
 - Enumerate changes: `openspec list` (or `openspec change list --json` - deprecated but available)
