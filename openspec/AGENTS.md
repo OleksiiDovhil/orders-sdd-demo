@@ -81,11 +81,19 @@ After deployment, create separate PR to:
 
 **When Creating tasks.md:**
 - **MANDATORY**: Always include a "Test Execution and Validation" section
+- **CRITICAL**: The "Test Execution and Validation" section MUST be the LAST section in tasks.md
 - This section must include tasks to run all tests using `make test`
 - Include tasks to fix any failing tests after code changes
 - Include tasks to run coverage tests (`make test-coverage`) and compare with threshold (`make test-coverage-check`)
 - If coverage decreased, include task to analyze uncovered code (`make test-coverage-analyze`) and create/update tests to restore coverage
 - Test execution is a gate - all tests must pass before work is considered complete
+- **MANDATORY**: Always include SQL query quality review tasks in the Testing section
+- SQL quality review must verify: query readability, index usage, performance (no N+1 problems), proper SQL clauses, and execution time with realistic data
+- **MANDATORY**: Always include a "Manual API Testing" section
+- Manual testing section must come BEFORE "Test Execution and Validation" section
+- Manual testing section must include: curl commands for all endpoint scenarios, verification of responses and database state, testing of validation errors and edge cases
+- Manual testing is a gate - all endpoints must be manually tested before work is considered complete
+- **Section order**: Implementation → Testing → Manual API Testing → Test Execution and Validation (last)
 
 **Running PHP Commands:**
 - **ALWAYS** run PHP-related commands inside the PHP container, never directly in the console
@@ -223,25 +231,56 @@ If multiple capabilities are affected, create multiple delta files under `change
 - [ ] 1.5 Review and optimize database queries (reduce query count if possible, without breaking business rules or performance)
 - [ ] 1.6 Replace string literals with Enums/constants (messages, status values) - convert to strings only in presentation layer
 
-## X. Test Execution and Validation
-- [ ] X.1 Run PHPStan for src folder: `make phpstan-src` and fix any issues found
-- [ ] X.2 Run CodeSniffer for src folder: `make phpcbf-src` to auto-fix issues, then `make phpcs-src` to verify
-- [ ] X.3 Fix any remaining CodeSniffer violations in src folder that phpcbf could not auto-fix
-- [ ] X.4 Run deptrac: `make deptrack` and fix any architectural violations found
-- [ ] X.5 Run all tests: `make test` and verify all tests pass with exit code 0
-- [ ] X.6 Fix any failing tests that may have been broken by code changes
-- [ ] X.7 Run PHPStan globally (with tests folder): `make phpstan` and fix any issues found
-- [ ] X.8 Run CodeSniffer globally (with tests folder): `make phpcbf` to auto-fix issues, then `make phpcs` to verify
-- [ ] X.9 Fix any remaining CodeSniffer violations that phpcbf could not auto-fix
-- [ ] X.10 Run tests with coverage: `make test-coverage` to generate coverage report (XML, HTML, and text formats)
-- [ ] X.11 Analyze coverage report coverage.txt (then clover.xml if not 100% for all classes) to identify all uncovered lines in `src/` directory
-- [ ] X.12 Add tests to cover all uncovered lines (only modify test files in `tests/` directory, not `src/`)
-- [ ] X.13 If unreachable dead code is found that prevents 100% coverage, remove it from `src/` (this is the only exception to modifying `src/`)
-- [ ] X.14 Run `make test-coverage` again and verify coverage is 100% (all classes, methods, and lines covered)
-- [ ] X.15 Run all tests again: `make test` to ensure new tests don't break existing functionality
+## 2. Testing
+- [ ] 2.1 Write unit tests for [component]
+- [ ] 2.2 Write feature tests for [endpoint]
+- [ ] 2.3 Review SQL query quality for [repository method]:
+  - [ ] 2.3.1 Verify query is readable and well-formatted
+  - [ ] 2.3.2 Verify query uses appropriate indexes
+  - [ ] 2.3.3 Verify query performance is optimal (single query with JOIN, no N+1 problems)
+  - [ ] 2.3.4 Verify query uses appropriate SQL clauses correctly
+  - [ ] 2.3.5 Test query execution time with realistic data volumes
+
+## 3. Manual API Testing
+- [ ] 3.1 Start application services: `make up` or `docker-compose up -d`
+- [ ] 3.2 Test [endpoint] with valid data via curl:
+  ```bash
+  curl -X [METHOD] "http://localhost:8080/api/[endpoint]" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -d '[request body]'
+  ```
+- [ ] 3.3 Verify response contains correct structure and data
+- [ ] 3.4 Test endpoint with different valid parameter values
+- [ ] 3.5 Test endpoint without required parameters and verify validation error
+- [ ] 3.6 Test endpoint with invalid parameter values and verify validation errors
+- [ ] 3.7 Test endpoint edge cases (empty results, boundary values)
+- [ ] 3.8 Verify database state after API calls (data persisted correctly)
+- [ ] 3.9 Verify response JSON structure matches OpenAPI documentation
+
+## 4. Test Execution and Validation
+- [ ] 4.1 Run PHPStan for src folder: `make phpstan-src` and fix any issues found
+- [ ] 4.2 Run CodeSniffer for src folder: `make phpcbf-src` to auto-fix issues, then `make phpcs-src` to verify
+- [ ] 4.3 Fix any remaining CodeSniffer violations in src folder that phpcbf could not auto-fix
+- [ ] 4.4 Run deptrac: `make deptrack` and fix any architectural violations found
+- [ ] 4.5 Run all tests: `make test` and verify all tests pass with exit code 0
+- [ ] 4.6 Fix any failing tests that may have been broken by code changes
+- [ ] 4.7 Run PHPStan globally (with tests folder): `make phpstan` and fix any issues found
+- [ ] 4.8 Run CodeSniffer globally (with tests folder): `make phpcbf` to auto-fix issues, then `make phpcs` to verify
+- [ ] 4.9 Fix any remaining CodeSniffer violations that phpcbf could not auto-fix
+- [ ] 4.10 Run tests with coverage: `make test-coverage` to generate coverage report (XML, HTML, and text formats)
+- [ ] 4.11 Analyze coverage report coverage.txt (then clover.xml if not 100% for all classes) to identify all uncovered lines in `src/` directory
+- [ ] 4.12 Add tests to cover all uncovered lines (only modify test files in `tests/` directory, not `src/`)
+- [ ] 4.13 If unreachable dead code is found that prevents 100% coverage, remove it from `src/` (this is the only exception to modifying `src/`)
+- [ ] 4.14 Run `make test-coverage` again and verify coverage is 100% (all classes, methods, and lines covered)
+- [ ] 4.15 Run all tests again: `make test` to ensure new tests don't break existing functionality
 ```
 
-**CRITICAL**: Every `tasks.md` MUST include a "Test Execution and Validation" section with explicit tasks to run tests after code changes. This is mandatory regardless of whether new tests are written or only existing code is modified.
+**CRITICAL**: Every `tasks.md` MUST include (in this exact order):
+1. **Implementation section(s)** - Code implementation tasks
+2. **Testing section** - Writing tests and SQL query quality review
+3. **Manual API Testing section** - Manual testing with curl commands
+4. **"Test Execution and Validation" section** - **MUST BE THE LAST SECTION** - Explicit tasks to run tests, code quality checks, and validation after all code changes are complete. This is mandatory regardless of whether new tests are written or only existing code is modified.
 
 5. **Create design.md when needed:**
 Create `design.md` if any of the following apply; otherwise omit it:
@@ -486,11 +525,15 @@ notifications/spec.md
 - **MANDATORY: Run all tests after code changes** - Use `make test` command
 - **MANDATORY: Fix failing tests before completion** - Never leave tests in a failing state
 - **MANDATORY: Include test execution tasks in tasks.md** - Every proposal MUST have a "Test Execution and Validation" section with explicit tasks following the standard workflow (phpstan-src, codesniffer-src, deptrack, test, phpstan, codesniffer, test-coverage, test-coverage-check, test-coverage-analyze if coverage decreased)
+- **MANDATORY: SQL Query Quality Review** - Every proposal MUST include SQL query quality review tasks in the Testing section, verifying: query readability, index usage, performance (no N+1 problems), proper SQL clauses, and execution time with realistic data
+- **MANDATORY: Manual API Testing** - Every proposal MUST include a "Manual API Testing" section with curl commands for all endpoint scenarios, verification of responses and database state, and testing of validation errors and edge cases
 - Test missing required fields, invalid types, invalid values, invalid JSON format
 - Verify specific error messages in validation tests
 - Request DTOs must have 100% test coverage
 - **Test execution is a gate** - All tests must pass before work is considered complete
 - **Test execution tasks are required** - Even if no new tests are written, existing tests must be run and verified after any code changes
+- **SQL quality review is required** - All database queries must be reviewed for quality, performance, and readability
+- **Manual testing is a gate** - All API endpoints must be manually tested using curl or similar tools before work is considered complete
 
 ### Complexity Triggers
 Only add complexity with:

@@ -513,3 +513,80 @@ Follow the standard "Test Execution and Validation" workflow:
 - **Never commit code with failing tests** - Tests are a gate for code quality
 - **Run tests before finalizing any implementation** - Catch issues early
 - **Use `make test` to run all tests** - Do not use separate unit/feature test commands
+
+### SQL Query Quality Review
+**MANDATORY**: All database queries must be reviewed for quality, performance, and readability.
+
+#### SQL Quality Checklist
+- [ ] **Query Readability**: SQL queries are well-formatted, properly indented, and easy to understand
+- [ ] **Index Usage**: Queries use appropriate indexes (e.g., `created_at` for ordering, foreign keys for JOINs)
+- [ ] **Performance**: Queries are optimized (single query with JOINs, no N+1 problems, efficient WHERE clauses)
+- [ ] **Query Structure**: Uses appropriate SQL clauses (LIMIT, ORDER BY, JOIN) correctly
+- [ ] **Data Volume Testing**: Query execution time tested with realistic data volumes
+- [ ] **No Redundant Queries**: All needed data loaded in initial query rather than separate lookups
+
+#### Common SQL Quality Issues to Avoid
+- ❌ N+1 query problems (loading related data in loops)
+- ❌ Missing indexes on frequently queried columns
+- ❌ Loading unnecessary columns or data
+- ❌ Inefficient JOINs or subqueries
+- ❌ Missing LIMIT clauses on potentially large result sets
+- ❌ Poor query formatting making code hard to read
+
+#### SQL Quality Review Process
+1. Review all SQL queries in repository implementations
+2. Verify indexes exist for columns used in WHERE, ORDER BY, and JOIN clauses
+3. Test query performance with realistic data volumes
+4. Ensure queries are readable and well-formatted
+5. Verify no N+1 query problems exist
+6. Confirm all needed data is loaded efficiently
+
+### Manual API Testing
+**MANDATORY**: All API endpoints must be manually tested using curl or similar tools before considering work complete.
+
+#### Manual Testing Requirements
+- **MUST test all endpoints manually** - Use curl or HTTP client tools
+- **MUST test success cases** - Verify correct response structure and data
+- **MUST test validation errors** - Verify error responses for invalid inputs
+- **MUST test edge cases** - Empty results, boundary values, etc.
+- **MUST verify database state** - Confirm data is persisted correctly after API calls
+- **MUST verify response matches OpenAPI documentation** - Ensure actual responses match documented schemas
+
+#### Manual Testing Checklist
+- [ ] Start application services (`make up` or `docker-compose up -d`)
+- [ ] Test endpoint with valid data and verify success response
+- [ ] Test endpoint with different valid parameter values
+- [ ] Test endpoint without required parameters and verify validation error
+- [ ] Test endpoint with invalid parameter values (negative, zero, non-integer, etc.)
+- [ ] Test endpoint edge cases (empty results, boundary values)
+- [ ] Verify response JSON structure matches OpenAPI documentation
+- [ ] Verify database state after API calls (data persisted correctly)
+- [ ] Test all HTTP methods and status codes for the endpoint
+
+#### Example Manual Testing Commands
+```bash
+# Test GET endpoint with valid parameter
+curl -X GET "http://localhost:8080/api/orders?limit=5" \
+  -H "Accept: application/json"
+
+# Test endpoint without required parameter
+curl -X GET "http://localhost:8080/api/orders" \
+  -H "Accept: application/json"
+
+# Test endpoint with invalid parameter
+curl -X GET "http://localhost:8080/api/orders?limit=-1" \
+  -H "Accept: application/json"
+
+# Test POST endpoint with valid data
+curl -X POST "http://localhost:8080/api/orders" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"sum": 1000, "contractorType": 1, "items": [{"productId": 1, "price": 1000, "quantity": 1}]}'
+```
+
+#### Manual Testing in tasks.md
+Every `tasks.md` file MUST include a "Manual API Testing" section with:
+- Tasks to start application services
+- curl commands for testing all endpoint scenarios
+- Verification steps for responses and database state
+- Testing of validation errors and edge cases
