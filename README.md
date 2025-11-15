@@ -1,3 +1,116 @@
+## Orders API
+
+This feature introduces three new API endpoints:
+
+1. **Create Order**
+2. **Complete Order**
+3. **Get Recent Orders**
+
+All data storage must use **PDO** and the **Repository** pattern.
+
+---
+
+### 1. Create Order (DONE)
+
+Creates a new order.
+
+#### Request body
+
+```jsonc
+{
+  "sum": 1000,              // total order amount
+  "contractorType": 1,      // contractor type (e.g. 1 = individual, 2 = legal entity)
+  "items": [
+    {
+      "productId": 1,       // product ID
+      "price": 1000,        // price per unit
+      "quantity": 1         // quantity
+    }
+    // ...
+  ]
+}
+```
+
+#### Order number format
+
+On creation, the system generates a unique order number in the format:
+
+```text
+{year}-{month}-{sequentialOrderNumber}
+```
+
+Example:
+
+```text
+2020-09-12345
+```
+
+#### Redirect behavior
+
+After a successful order creation:
+
+* For **individuals (physical persons)**: redirect to
+  `http://some-pay-agregator.com/pay/{orderNumber}`
+
+* For **legal entities**: redirect to
+  `http://some-pay-agregator.com/orders/{orderNumber}/bill`
+
+---
+
+### 2. Complete Order (DONE)
+
+Checks the payment status of an order and returns a result that allows the frontend to show either:
+
+* a **“thank you” page** (if paid), or
+* a **payment reminder** (if not paid).
+
+#### Payment status check logic
+
+* **Legal entities**
+  Payment status is checked via a **separate microservice**.
+
+* **Individuals (physical persons)**
+  Payment status is read from a **payment flag in the database**.
+  This flag is updated by an external microservice (the implementation of this data exchange is out of scope for this feature).
+
+---
+
+### 3. Get Recent Orders
+
+Returns information about the specified number of most recent orders.
+
+> The endpoint must accept a parameter that defines how many last orders to return (e.g. `limit`).
+
+#### Response body
+
+```jsonc
+[
+  {
+    "id": "2020-09-123456",   // order number
+    "sum": 1000,              // total order amount
+    "contractorType": 1,      // contractor type (individual / legal entity)
+    "items": [
+      {
+        "productId": 1,       // product ID
+        "price": 1000,        // price per unit
+        "quantity": 1         // quantity
+      }
+      // ...
+    ]
+  }
+  // ...
+]
+```
+
+---
+
+### Technical Requirements
+
+* Use **PDO** for all database access.
+* Implement data access via the **Repository** pattern.
+
+
+
 # Symfony Application
 
 A Symfony 7.3 application with Docker Compose local development environment.
