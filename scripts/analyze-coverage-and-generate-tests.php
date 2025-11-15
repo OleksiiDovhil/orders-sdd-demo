@@ -10,7 +10,6 @@
  */
 
 $cloverFile = $argv[1] ?? 'coverage/clover.xml';
-$coveragePercentFile = 'coverage_percent';
 
 // Check if coverage file exists
 if (!file_exists($cloverFile)) {
@@ -19,18 +18,8 @@ if (!file_exists($cloverFile)) {
     exit(1);
 }
 
-// Check if threshold file exists
-if (!file_exists($coveragePercentFile)) {
-    fwrite(STDERR, "Error: Threshold file not found: {$coveragePercentFile}\n");
-    exit(1);
-}
-
-// Read threshold
-$threshold = (float) trim(file_get_contents($coveragePercentFile));
-if ($threshold <= 0 || $threshold > 100) {
-    fwrite(STDERR, "Error: Invalid threshold value in {$coveragePercentFile}\n");
-    exit(1);
-}
+// Set threshold to 100%
+$threshold = 100.0;
 
 // Parse coverage XML
 $xml = simplexml_load_file($cloverFile);

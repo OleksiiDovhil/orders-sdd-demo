@@ -55,24 +55,8 @@ if ($currentCoverage === null) {
     exit(1);
 }
 
-// Read threshold from file (same as check-coverage-threshold.php)
-$thresholdFile = 'coverage_percent';
-if (!file_exists($thresholdFile)) {
-    echo "❌ Threshold file not found: {$thresholdFile}\n";
-    exit(1);
-}
-
-$thresholdContent = trim(file_get_contents($thresholdFile));
-if ($thresholdContent === false || $thresholdContent === '') {
-    echo "❌ Threshold file is empty\n";
-    exit(1);
-}
-
-$threshold = (float) $thresholdContent;
-if ($threshold <= 0 || $threshold > 100) {
-    echo "❌ Invalid threshold value: {$thresholdContent}\n";
-    exit(1);
-}
+// Set threshold to 100%
+$threshold = 100.0;
 
 // Check if coverage meets threshold
 if ($currentCoverage >= $threshold) {

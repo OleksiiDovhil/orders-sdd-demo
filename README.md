@@ -176,10 +176,9 @@ The project includes a Makefile with convenient commands for Docker operations:
 - `make test` - Run all tests
 - `make test-coverage` - Run tests with coverage report (generates HTML and XML reports in `coverage/` directory)
 - `make test-coverage-percent` - Extract and display coverage percentage from the latest coverage report
-- `make test-coverage-save` - Run tests with coverage and save percentage to `coverage_percent` file
-- `make test-coverage-check` - Run tests with coverage and verify coverage meets threshold in `coverage_percent` file
+- `make test-coverage-check` - Run tests with coverage and verify coverage meets 100% threshold
 - `make test-coverage-analyze` - Analyze coverage report to identify uncovered code (useful when coverage decreased)
-- `make test-coverage-auto-fix` - Automated workflow: runs coverage, checks threshold, prioritizes recently modified files, and guides test creation
+- `make test-coverage-auto-fix` - Automated workflow: runs coverage, checks 100% threshold, prioritizes recently modified files, and guides test creation
 
 ## Services
 
@@ -303,26 +302,26 @@ make test-coverage-percent
 
 **Note**: You must run `make test-coverage` first to generate the coverage report before extracting the percentage.
 
-Run tests with coverage and check if coverage meets the threshold in `coverage_percent` file:
+Run tests with coverage and check if coverage meets the 100% threshold:
 ```bash
 make test-coverage-check
 ```
 
 This will:
 1. Run tests with coverage
-2. Compare current coverage with the threshold stored in `coverage_percent` file
-3. Exit with error code if coverage is below the threshold
+2. Compare current coverage with the 100% threshold
+3. Exit with error code if coverage is below 100%
 
-This is useful for CI/CD pipelines to ensure coverage doesn't decrease.
+This is useful for CI/CD pipelines to ensure coverage doesn't decrease below 100%.
 
-Analyze coverage report to identify uncovered code (useful when coverage decreased):
+Analyze coverage report to identify uncovered code (useful when coverage is below 100%):
 ```bash
 make test-coverage-analyze
 ```
 
 This will:
-1. Compare current coverage with the threshold in `coverage_percent` file
-2. If coverage decreased, analyze the coverage report to find:
+1. Compare current coverage with the 100% threshold
+2. If coverage is below 100%, analyze the coverage report to find:
    - Classes with uncovered code (sorted by coverage percentage)
    - Uncovered methods in each class
    - Uncovered line counts
@@ -336,8 +335,8 @@ make test-coverage-auto-fix
 
 This automated workflow will:
 1. **Run tests with coverage** - Generates all coverage reports (HTML, XML, text)
-2. **Check coverage threshold** - Compares current coverage with `coverage_percent` file
-3. **If coverage decreased**:
+2. **Check coverage threshold** - Compares current coverage with 100% threshold
+3. **If coverage is below 100%**:
    - Analyzes both `coverage.txt` and `clover.xml` to find uncovered code
    - **Prioritizes recently created/edited files** (from git diff) as **HIGHEST PRIORITY** ⭐
    - Sorts remaining files by coverage percentage (lowest first)
@@ -356,13 +355,12 @@ This automated workflow will:
 
 The project includes a pre-commit hook that automatically checks test coverage before each commit:
 
-- **If coverage decreased**: The commit is blocked with an error message showing how much coverage decreased
-- **If coverage increased**: The `coverage_percent` file is automatically updated with the new value and added to the commit
-- **If coverage stayed the same**: The commit proceeds normally
+- **If coverage is below 100%**: The commit is blocked with an error message showing how much coverage is below the threshold
+- **If coverage is 100% or above**: The commit proceeds normally
 
 The coverage check runs as part of the pre-commit hook after all other validations (CodeSniffer, PHPStan, Deptrack, and tests) have passed.
 
-**Note**: If the `coverage_percent` file doesn't exist, it will be created automatically with the current coverage percentage on the first commit.
+**Note**: The project requires 100% test coverage. All code in the `src/` directory must be covered by tests.
 
 ### Test Coverage
 

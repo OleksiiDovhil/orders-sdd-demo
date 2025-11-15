@@ -1,28 +1,14 @@
 #!/bin/bash
 
 # Pre-commit hook to check test coverage
-# Blocks commit if coverage decreased
-# Updates coverage_percent file if coverage increased
+# Blocks commit if coverage is below 100%
 
 set -e
 
 echo "Running coverage check..."
 
-# Check if coverage_percent file exists
-if [ ! -f "coverage_percent" ]; then
-    echo "⚠ Warning: coverage_percent file not found. Creating it with current coverage..."
-    make test-coverage-save
-    git add coverage_percent
-    echo "✅ Created coverage_percent file with current coverage"
-    exit 0
-fi
-
-# Read current threshold
-THRESHOLD=$(cat coverage_percent | tr -d '[:space:]')
-if [ -z "$THRESHOLD" ]; then
-    echo "❌ Error: coverage_percent file is empty"
-    exit 1
-fi
+# Set threshold to 100%
+THRESHOLD=100.0
 
 # Check if docker-compose is available
 if ! command -v docker-compose >/dev/null 2>&1; then
@@ -75,16 +61,7 @@ fi
 if [ "$COMPARE_RESULT" = "INCREASED" ]; then
     DIFF=$(docker-compose exec -T php php -r "echo round((float) '${CURRENT_COVERAGE}' - (float) '${THRESHOLD}', 2);")
     echo ""
-    echo "✅ Coverage increased by ${DIFF}%!"
-    echo "Updating coverage_percent file from ${THRESHOLD}% to ${CURRENT_COVERAGE}%"
-    
-    # Update coverage_percent file
-    echo "$CURRENT_COVERAGE" > coverage_percent
-    
-    # Add to git staging area
-    git add coverage_percent
-    
-    echo "✅ Updated coverage_percent file and added to commit"
+    echo "✅ Coverage is ${CURRENT_COVERAGE}% (above 100% threshold)!"
 fi
 
 echo "✅ Coverage check passed!"

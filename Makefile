@@ -51,17 +51,10 @@ test-coverage:
 test-coverage-percent:
 	@docker-compose exec -T php php scripts/extract-coverage.php coverage/clover.xml
 
-# Run tests with coverage and save percentage to coverage_percent file
-test-coverage-save:
-	$(MAKE) test-coverage
-	@docker-compose exec -T php php scripts/extract-coverage.php coverage/clover.xml > coverage_percent 2>&1 || \
-		(echo "Failed to extract coverage percentage" && exit 1)
-	@echo "Coverage percentage saved to coverage_percent: $$(cat coverage_percent)%"
-
-# Run tests with coverage and check if coverage meets threshold in coverage_percent file
+# Run tests with coverage and check if coverage meets 100% threshold
 test-coverage-check:
 	$(MAKE) test-coverage
-	@docker-compose exec -T php php scripts/check-coverage-threshold.php coverage/clover.xml coverage_percent
+	@docker-compose exec -T php php scripts/check-coverage-threshold.php coverage/clover.xml
 
 # Analyze coverage report and identify uncovered code (useful when coverage decreased)
 # Note: Requires coverage report to be generated first with 'make test-coverage'

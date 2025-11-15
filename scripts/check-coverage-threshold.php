@@ -2,33 +2,14 @@
 <?php
 
 /**
- * Check if test coverage meets or exceeds the threshold stored in coverage_percent file
- * Usage: php scripts/check-coverage-threshold.php [path/to/coverage/clover.xml] [path/to/coverage_percent]
+ * Check if test coverage meets or exceeds 100% threshold
+ * Usage: php scripts/check-coverage-threshold.php [path/to/coverage/clover.xml]
  */
 
 $cloverFile = $argv[1] ?? 'coverage/clover.xml';
-$thresholdFile = $argv[2] ?? 'coverage_percent';
 
-// Check if threshold file exists
-if (!file_exists($thresholdFile)) {
-    fwrite(STDERR, "Error: Threshold file not found: {$thresholdFile}\n");
-    fwrite(STDERR, "Please create the file with the minimum coverage percentage.\n");
-    exit(1);
-}
-
-// Read threshold value
-$thresholdContent = trim(file_get_contents($thresholdFile));
-if ($thresholdContent === false || $thresholdContent === '') {
-    fwrite(STDERR, "Error: Threshold file is empty or could not be read: {$thresholdFile}\n");
-    exit(1);
-}
-
-$threshold = (float) $thresholdContent;
-if ($threshold <= 0 || $threshold > 100) {
-    fwrite(STDERR, "Error: Invalid threshold value in {$thresholdFile}: {$thresholdContent}\n");
-    fwrite(STDERR, "Threshold must be between 0 and 100.\n");
-    exit(1);
-}
+// Set threshold to 100%
+$threshold = 100.0;
 
 // Check if coverage file exists
 if (!file_exists($cloverFile)) {
