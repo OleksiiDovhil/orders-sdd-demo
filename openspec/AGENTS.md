@@ -491,77 +491,27 @@ notifications/spec.md
 ### OpenAPI Documentation Requirements
 - **MANDATORY: Add OpenAPI documentation to both Controller and Request classes**
 - **Request classes**: 
-  - Add `#[OA\Schema(schema: 'SchemaName', ...)]` attribute to the class
-  - Add `#[OA\Property(property: 'propertyName', ...)]` attributes to each property
-  - For nested objects (like order items), use `ref: '#/components/schemas/OrderItem'` in the items definition
-  - **All request parameter documentation (type, description, constraints, examples) MUST be in the Request class**
+  - Add `#[OA\Schema(schema: 'SchemaName', ...)]` to class, `#[OA\Property(...)]` to each property
+  - **All parameter documentation (type, description, constraints, examples) MUST be in Request class**
+  - For nested objects: `items: new OA\Items(ref: '#/components/schemas/OrderItem')`
 - **Controller classes**:
   - Add `#[OA\Get]`, `#[OA\Post]`, etc. attributes with endpoint documentation
-  - **NEVER duplicate Request schema definitions in controllers** - Always reference Request schemas
-  - For request bodies, reference Request class schemas: `new OA\JsonContent(ref: '#/components/schemas/CreateOrderRequest')`
-  - For query/path parameters, reference Request class schemas: `new OA\Schema(ref: '#/components/schemas/RequestClassName')`
-  - **DO NOT define parameter types, descriptions, constraints, or examples inline in controllers** - These must come from Request class schemas
-- **OpenAPI generator configuration**: 
-  - The generator scans both `src/Presentation/Controller` and `src/Presentation/Request` directories
-  - Schema definitions belong in Request classes, not in separate Schema classes
-- **Example Request class**:
+  - **NEVER duplicate Request schemas** - Always reference: `new OA\JsonContent(ref: '#/components/schemas/RequestClassName')`
+  - Use `requestBody: new OA\RequestBody(content: new OA\JsonContent(ref: '#/components/schemas/RequestClassName'))`
+- **Pattern**: Request class defines schema → Controller references it (no duplication)
+- **Example**:
   ```php
-  #[OA\Schema(schema: 'CreateOrderRequest', type: 'object', required: ['sum', 'contractorType', 'items'])]
-  final readonly class CreateOrderRequest
-  {
-      #[OA\Property(property: 'sum', type: 'integer', description: 'Total order amount in cents', example: 1000)]
-      #[Assert\NotBlank]
+  // Request class
+  #[OA\Schema(schema: 'CreateOrderRequest', type: 'object', required: ['sum'])]
+  final readonly class CreateOrderRequest {
+      #[OA\Property(property: 'sum', type: 'integer', description: 'Total in cents', example: 1000)]
       public int $sum;
-      
-      #[OA\Property(property: 'items', type: 'array', items: new OA\Items(ref: '#/components/schemas/OrderItem'))]
-      public array $items;
   }
-  ```
-- **Example Controller with request body reference**:
-  ```php
+  
+  // Controller
   requestBody: new OA\RequestBody(
       content: new OA\JsonContent(ref: '#/components/schemas/CreateOrderRequest')
   )
-  ```
-- **Example Controller with query parameter reference**:
-  ```php
-  parameters: [
-      new OA\Parameter(
-          name: 'limit',
-          in: 'query',
-          required: true,
-          schema: new OA\Schema(ref: '#/components/schemas/GetRecentOrdersRequest')
-      ),
-  ]
-  ```
-- **Example Controller with path parameter reference**:
-  ```php
-  parameters: [
-      new OA\Parameter(
-          name: 'uniqueOrderNumber',
-          in: 'path',
-          required: true,
-          schema: new OA\Schema(ref: '#/components/schemas/CheckOrderCompletionRequest')
-      ),
-  ]
-  ```
-- **Anti-pattern (DO NOT DO THIS)**:
-  ```php
-  // ❌ WRONG: Duplicating parameter definition in controller
-  parameters: [
-      new OA\Parameter(
-          name: 'limit',
-          in: 'query',
-          required: true,
-          description: 'Maximum number of orders to return',  // ❌ Duplicated from Request
-          schema: new OA\Schema(
-              type: 'integer',  // ❌ Duplicated from Request
-              minimum: 1,       // ❌ Duplicated from Request
-              maximum: 1000,   // ❌ Duplicated from Request
-              example: 5       // ❌ Duplicated from Request
-          )
-      ),
-  ]
   ```
 
 ### Repository and Interface Design

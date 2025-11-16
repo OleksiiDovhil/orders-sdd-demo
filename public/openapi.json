@@ -9,17 +9,17 @@
                 "summary": "Check order payment completion status",
                 "description": "Checks whether an order has been paid. For individual contractors, the payment status is stored in the database. For legal entities, the payment status is checked via a payment microservice.",
                 "operationId": "dc336f3ae12f28c29a2f0aa9498c4125",
-                "parameters": [
-                    {
-                        "name": "uniqueOrderNumber",
-                        "in": "path",
-                        "description": "Request parameters for checking order completion status",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/CheckOrderCompletionRequest"
+                "requestBody": {
+                    "description": "Check order completion status request",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CheckOrderCompletionRequest"
+                            }
                         }
                     }
-                ],
+                },
                 "responses": {
                     "200": {
                         "description": "Order payment status retrieved successfully",
@@ -108,17 +108,17 @@
                 "summary": "Get recent orders",
                 "description": "Returns the specified number of most recent orders, ordered by creation date (most recent first).",
                 "operationId": "09cfb5729d4ac32ffc8ef8deda810aa5",
-                "parameters": [
-                    {
-                        "name": "limit",
-                        "in": "query",
-                        "description": "Request parameters for getting recent orders",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/GetRecentOrdersRequest"
+                "requestBody": {
+                    "description": "Order creation data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GetRecentOrdersRequest"
+                            }
                         }
                     }
-                ],
+                },
                 "responses": {
                     "200": {
                         "description": "Recent orders retrieved successfully",

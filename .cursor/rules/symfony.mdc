@@ -263,13 +263,11 @@ final class UserCreatedListener
 - **OpenAPI Documentation** - Add `OA\Schema` and `OA\Property` attributes to request DTOs for API documentation
 
 ### OpenAPI Documentation
-- **MANDATORY: Add OpenAPI documentation to both Controller and Request classes**
-- **Request classes**: Add `OA\Schema` attribute to the class and `OA\Property` attributes to each property
-- **Controller classes**: Add `OA\Get`, `OA\Post`, etc. attributes with endpoint documentation
-- **Request body schemas**: Reference request schemas from Request classes using `ref: '#/components/schemas/SchemaName'`
-- **OpenAPI generator**: The generator scans both `src/Presentation/Controller` and `src/Presentation/Request` directories
-- **Schema definitions**: Define schemas in Request classes, not in separate Schema classes
-- **Example**: For request bodies, use `new OA\JsonContent(ref: '#/components/schemas/CreateOrderRequest')` in controller, and define the schema in the Request class with `#[OA\Schema(schema: 'CreateOrderRequest', ...)]`
+- **MANDATORY: Document both Controller and Request classes**
+- **Request classes**: Add `#[OA\Schema(schema: 'SchemaName', ...)]` to class, `#[OA\Property(...)]` to properties
+- **Controller classes**: Add `#[OA\Get]`, `#[OA\Post]`, etc. and reference Request schemas: `new OA\JsonContent(ref: '#/components/schemas/RequestClassName')`
+- **Pattern**: Define schema in Request class → Reference in Controller (never duplicate)
+- **Example**: `requestBody: new OA\RequestBody(content: new OA\JsonContent(ref: '#/components/schemas/CreateOrderRequest'))`
 
 ### Automatic Request Injection
 - Use `RequestValueResolver` for automatic deserialization and validation
