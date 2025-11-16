@@ -27,19 +27,13 @@ final class CheckOrderCompletionController extends AbstractController
         description: 'Checks whether an order has been paid. For individual contractors, the payment status is stored '
             . 'in the database. For legal entities, the payment status is checked via a payment microservice.',
         tags: ['Orders'],
-        parameters: [
-            new OA\Parameter(
-                name: 'uniqueOrderNumber',
-                in: 'path',
-                required: true,
-                description: 'Unique order number in format YYYY-MM-NNNNN',
-                schema: new OA\Schema(
-                    type: 'string',
-                    pattern: '^\d{4}-\d{2}-\d+$',
-                    example: '2025-11-1'
-                )
-            ),
-        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'Check order completion status request',
+            content: new OA\JsonContent(
+                ref: '#/components/schemas/CheckOrderCompletionRequest'
+            )
+        ),
         responses: [
             new OA\Response(
                 response: 200,

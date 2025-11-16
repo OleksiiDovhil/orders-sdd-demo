@@ -31,20 +31,13 @@ final class GetRecentOrdersController extends AbstractController
         description: 'Returns the specified number of most recent orders, '
             . 'ordered by creation date (most recent first).',
         tags: ['Orders'],
-        parameters: [
-            new OA\Parameter(
-                name: 'limit',
-                in: 'query',
-                required: true,
-                description: 'Maximum number of orders to return',
-                schema: new OA\Schema(
-                    type: 'integer',
-                    minimum: 1,
-                    maximum: 1000,
-                    example: 5
-                )
-            ),
-        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'Order creation data',
+            content: new OA\JsonContent(
+                ref: '#/components/schemas/GetRecentOrdersRequest'
+            )
+        ),
         responses: [
             new OA\Response(
                 response: 200,

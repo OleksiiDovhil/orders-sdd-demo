@@ -13,12 +13,10 @@
                     {
                         "name": "uniqueOrderNumber",
                         "in": "path",
-                        "description": "Unique order number in format YYYY-MM-NNNNN",
+                        "description": "Request parameters for checking order completion status",
                         "required": true,
                         "schema": {
-                            "type": "string",
-                            "pattern": "^\\d{4}-\\d{2}-\\d+$",
-                            "example": "2025-11-1"
+                            "$ref": "#/components/schemas/CheckOrderCompletionRequest"
                         }
                     }
                 ],
@@ -114,13 +112,10 @@
                     {
                         "name": "limit",
                         "in": "query",
-                        "description": "Maximum number of orders to return",
+                        "description": "Request parameters for getting recent orders",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "maximum": 1000,
-                            "minimum": 1,
-                            "example": 5
+                            "$ref": "#/components/schemas/GetRecentOrdersRequest"
                         }
                     }
                 ],
